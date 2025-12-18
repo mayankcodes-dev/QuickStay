@@ -26,6 +26,6 @@ export const storeRecentSearchedCities = async (req, res, next)=>{
         res.json({success: true, message: "City added"})
 
     }catch(error){
-        res.json({success: fetch, message: 'City added'})
+        res.json({success: false, message: error.message})
     }
 }

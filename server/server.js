@@ -9,21 +9,28 @@ import hotelRouter from './routes/hotelRoutes.js';
 import roomRouter from './routes/roomRoutes.js';
 import connectCloudinary from './configs/cloudinary.js';
 import bookingRouter from './routes/bookingRoutes.js';
-import { addCurrentUser } from './addUser.js';
-
-
-
-await connectDB();
-connectCloudinary();
-//adding current users from clerk to mongodb
-await addCurrentUser();
-
-
-
-
 
 const app = express();
-app.use(cors()); //for connecting server and client
+
+// Connect cloudinary (doesn't need await)
+connectCloudinary();
+
+// CORS configuration
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
+
+// Middleware to ensure DB connection on every request (for serverless)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        console.error('Database connection error:', error);
+        res.status(500).json({ success: false, message: 'Database connection failed' });
+    }
+});
 
 //API to listen to clerk webhooks (must be before express.json() middleware)
 app.post('/api/clerk', express.json({ type: 'application/json' }), clerkWebhooks);
@@ -45,8 +52,12 @@ app.use('/api/bookings', bookingRouter);
 
 const PORT = process.env.PORT || 3000;
 
+// Only start listening if not in serverless environment
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, ()=>{
+        console.log(`Server is running on port ${PORT}`);
+    })
+}
 
-
-app.listen(PORT, ()=>{
-    console.log(`Server is running on port ${PORT}`);
-})
+// Export for Vercel serverless
+export default app;
