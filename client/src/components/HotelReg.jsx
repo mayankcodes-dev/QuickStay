@@ -14,8 +14,7 @@ const HotelReg = () => {
 
     const onSubmitHandler = async (event) =>{
         try {
-            event.preventDefault();
-            
+            event.preventDefault();    
             const {data} = await axios.post('/api/hotels',{name, contact, 
             address, city}, {headers:{Authorization: `Bearer ${await getToken()}`
             }});

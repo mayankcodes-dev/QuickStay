@@ -1,10 +1,37 @@
-import { assets, userBookingsDummyData } from '../assets/assets'
+import { useAppContext } from '../context/AppContext'
+import { assets } from '../assets/assets'
 import Title from '../components/Title'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
+
 
 const MyBookings = () => {
 
-    const [bookings, setBookings] = useState(userBookingsDummyData)
+    const [bookings, setBookings] = useState([])
+
+    const { axios, getToken, user } = useAppContext()
+
+    const fetchUserBookings = async () => {
+        try {
+            const { data } = await axios.get('/api/bookings/user', {
+                headers: { Authorization: `Bearer ${await getToken()}` }
+            })
+            if (data.success) {
+                setBookings(data.bookings)
+            }else{
+                toast.error(data.message)
+            }
+        }
+        catch (error) {
+            toast.error(error.message)
+        }
+    }
+
+    useEffect(()=>{
+        if(user){
+            fetchUserBookings();
+        }
+    }, [user])
 
     return (
         <div className='py-28 md:pb-35 md:pt-32 px-4 md:px-16 lg:px-24 xl:px-32'>
@@ -28,11 +55,11 @@ const MyBookings = () => {
                                     <span className='font-inter text-sm'> ({booking.room.roomType})</span>
                                 </p>
                                 <div className='flex items-center gap-1 text-sm text-gray-500'>
-                                    <img src={assets.locationIcon} alt="location-icon"/>
+                                    <img src={assets.locationIcon} alt="location-icon" />
                                     <span>{booking.hotel.address}</span>
                                 </div>
                                 <div className='flex items-center gap-1 text-sm text-gray-500'>
-                                    <img src={assets.guestsIcon} alt="guest-icon"/>
+                                    <img src={assets.guestsIcon} alt="guest-icon" />
                                     <span>Guests: {booking.guests}</span>
                                 </div>
                                 <p className='text-base'>Total: ${booking.totalPrice}</p>
@@ -40,18 +67,18 @@ const MyBookings = () => {
                         </div>
                         {/* ------------- Date & Timings --------------- */}
                         <div className='flex flex-row md:items-center md:gap-12 mt-3 gap-8'>
-                              <div>
-                               <p>Check-In:</p> 
-                               <p className='text-gray-500 text-sm'>
-                                {new Date(booking.checkInDate).toDateString()}
-                               </p>
-                              </div>  
-                              <div>
-                               <p>Check-Out:</p> 
-                               <p className='text-gray-500 text-sm'>
-                                {new Date(booking.checkOutDate).toDateString()}
-                               </p>
-                              </div>  
+                            <div>
+                                <p>Check-In:</p>
+                                <p className='text-gray-500 text-sm'>
+                                    {new Date(booking.checkInDate).toDateString()}
+                                </p>
+                            </div>
+                            <div>
+                                <p>Check-Out:</p>
+                                <p className='text-gray-500 text-sm'>
+                                    {new Date(booking.checkOutDate).toDateString()}
+                                </p>
+                            </div>
                         </div>
                         {/* ------------- Payment Status --------------- */}
                         <div className='flex flex-col items-start justify-center pt-3'>
@@ -63,7 +90,7 @@ const MyBookings = () => {
                             </div>
                             {!booking.isPaid && (
                                 <button className='px-4 py-1.5 mt-4 text-xs border border-gray-400 
-                                rounded-full hover:bg-gray-50 transition-all cursor-pointer'>Pay Now</button>
+                                    rounded-full hover:bg-gray-50 transition-all cursor-pointer'>Pay Now</button>
                             )}
                         </div>
                     </div>
