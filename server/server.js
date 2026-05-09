@@ -2,6 +2,7 @@ import express from 'express';
 import 'dotenv/config';
 import cors from 'cors';
 import connectDB from './configs/db.js';
+import mongoose from 'mongoose';
 import { clerkMiddleware } from '@clerk/express'
 import clerkWebhooks from './controllers/clerkWebhooks.js';
 import userRouter from './routes/userRoutes.js';
@@ -27,6 +28,23 @@ app.use(clerkMiddleware());
 
 // Routes
 app.get('/', (req, res) => res.send('API is working...'));
+
+// Health check endpoint — use this URL in UptimeRobot to keep the server warm
+app.get('/api/health', async (req, res) => {
+    try {
+        const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+        const mongoStatus = dbState[mongoose.connection.readyState] || 'unknown';
+        res.json({
+            status: 'ok',
+            db: mongoStatus,
+            uptime: Math.floor(process.uptime()) + 's',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(503).json({ status: 'error', message: error.message });
+    }
+});
+
 app.use('/api/user', userRouter);
 app.use('/api/hotels', hotelRouter);
 app.use('/api/rooms', roomRouter);
