@@ -53,16 +53,22 @@ const Footer = () => {
                             <img src={assets.arrowIcon} alt="arrow-icon" className='w-3.5 invert'/>
                           </button>
                     </div>
+                    <ul className='flex items-center gap-4 mt-4 text-sm'>
+                        <li><a href="#" className='hover:text-black transition-colors'>Privacy</a></li>
+                        <li><a href="#" className='hover:text-black transition-colors'>Terms</a></li>
+                        <li><a href="#" className='hover:text-black transition-colors'>Sitemap</a></li>
+                    </ul>
                 </div>
             </div>
             <hr className='border-gray-300 mt-8' />
             <div className='flex flex-col md:flex-row gap-2 items-center justify-between py-5'>
-                <p>© {new Date().getFullYear()} QuickStay. All rights reserved.</p>
-                <ul className='flex items-center gap-4'>
-                    <li><a href="#">Privacy</a></li>
-                    <li><a href="#">Terms</a></li>
-                    <li><a href="#">Sitemap</a></li>
-                </ul>
+                <p>© {new Date().getFullYear()} <a href="/" onClick={(e) => { e.preventDefault(); window.location.reload(); }} className='text-gray-800 font-semibold hover:text-black transition-colors'>QuickStay</a>. All rights reserved.</p>
+                <p>
+                    Designed &amp; Developed by&nbsp;
+                    <a href="https://mayank-developer.vercel.app/" target="_blank" rel="noopener noreferrer" className='text-gray-800 font-semibold hover:text-black transition-colors'>
+                        Mayank Singh
+                    </a>
+                </p>
             </div>
         </div>
     )
