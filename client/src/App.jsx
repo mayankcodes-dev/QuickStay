@@ -24,6 +24,7 @@ const Layout     = lazy(() => import("./pages/hotelOwner/Layout"));
 const Dashboard  = lazy(() => import("./pages/hotelOwner/Dashboard"));
 const AddRoom    = lazy(() => import("./pages/hotelOwner/AddRoom"));
 const ListRoom   = lazy(() => import("./pages/hotelOwner/ListRoom"));
+const EditHotel  = lazy(() => import("./pages/hotelOwner/EditHotel"));
 
 // Admin panel
 const AdminLayout    = lazy(() => import("./pages/admin/AdminLayout"));
@@ -92,6 +93,7 @@ const App = () => {
                   <Route index            element={<Dashboard />} />
                   <Route path="add-room"  element={<AddRoom />} />
                   <Route path="list-room" element={<ListRoom />} />
+                  <Route path="edit-hotel" element={<EditHotel />} />
                 </Route>
 
                 {/* Admin panel */}

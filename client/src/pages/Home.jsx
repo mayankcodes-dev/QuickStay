@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { Helmet } from "react-helmet-async";
 import Hero from "../components/Hero";
 import FeaturedDestination from "../components/FeaturedDestination";
 import ExclusiveOffers from "../components/ExclusiveOffers";
@@ -9,6 +10,7 @@ import CategoryTabs from "../components/CategoryTabs";
 import FlashDeals from "../components/FlashDeals";
 import AppBanner from "../components/AppBanner";
 import SkeletonCard from "../components/SkeletonCard";
+import JsonLd from "../components/JsonLd";
 import { motion } from "framer-motion";
 import { useAppContext } from "../context/AppContext";
 
@@ -25,6 +27,15 @@ const Home = () => {
 
   return (
     <>
+      <Helmet>
+        <title>YoYo Rooms — Book Hotels Across India | Best Price Guarantee</title>
+        <meta name="description" content="Book budget to luxury hotels across India on YoYo Rooms. Instant confirmation, free cancellation, best price guarantee. 10,000+ verified hotels in 200+ cities." />
+        <meta property="og:title" content="YoYo Rooms — India's Fastest Growing Hotel Platform" />
+        <meta property="og:description" content="Find and book the perfect stay across India. Budget to luxury, instant confirmation." />
+        <meta property="og:type" content="website" />
+      </Helmet>
+      <JsonLd type="WebSite" />
+
       {/* Full-screen video hero */}
       <Hero />
 
