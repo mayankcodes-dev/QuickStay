@@ -7,6 +7,7 @@ import HotelCard from "../components/HotelCard";
 import SkeletonCard from "../components/SkeletonCard";
 import { useAppContext } from "../context/AppContext";
 import { ROOM_TYPES, PRICE_RANGES, CATEGORIES, SORT_OPTIONS, matchesPrice } from "../constants/filters";
+import axios from "axios";
 
 // ── Indian cities autocomplete ────────────────────────────
 const CITIES = [
@@ -177,6 +178,31 @@ const AllRooms = () => {
   const [checkOutDate,  setCheckOutDate]  = useState(searchParams.get("checkOut")    || "");
   const [guestCount,    setGuestCount]    = useState(Number(searchParams.get("guests")) || 1);
 
+  // NLP search state
+  const [nlpQuery,   setNlpQuery]   = useState("");
+  const [nlpLoading, setNlpLoading] = useState(false);
+
+  // ── AI NLP parse-search ──────────────────────────────────────
+  const parseNLP = async () => {
+    if (!nlpQuery.trim()) return;
+    setNlpLoading(true);
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+      const { data } = await axios.post(`${backendUrl}/api/ai/parse-search`, { query: nlpQuery });
+      if (data.success && data.filters) {
+        const f = data.filters;
+        if (f.city) { setCityInput(f.city); handleSearch(f.city); }
+        setFilters(prev => ({
+          ...prev,
+          roomType:   f.roomType   ? [f.roomType]   : prev.roomType,
+          category:   f.category   ? [f.category]   : prev.category,
+          priceRange: f.maxPrice   ? [`Under ₹${f.maxPrice}`] : prev.priceRange,
+        }));
+      }
+    } catch (_) {}
+    finally { setNlpLoading(false); }
+  };
+
   const destination = searchParams.get("destination") || "";
 
   const handleSearch = (city) => {
@@ -225,7 +251,7 @@ const AllRooms = () => {
   return (
     <main
       id="main-content"
-      className="min-h-screen pt-24 md:pt-32 pb-20 px-4 md:px-16 lg:px-24 xl:px-32"
+      className="min-h-screen pt-28 md:pt-36 pb-24 px-4 md:px-16 lg:px-24 xl:px-32"
       style={{ background: "var(--color-surface)" }}
     >
       <Helmet>
@@ -244,6 +270,37 @@ const AllRooms = () => {
         <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
           {isLoading ? "Loading…" : `${filteredRooms.length} propert${filteredRooms.length === 1 ? "y" : "ies"} found`}
         </p>
+      </motion.div>
+
+      {/* ── AI NLP Smart Search ─────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="mb-4 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center"
+        style={{ background: "linear-gradient(135deg, rgba(232,0,61,0.06) 0%, rgba(124,58,237,0.06) 100%)", border: "1px solid rgba(232,0,61,0.15)" }}
+      >
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xl">🤖</span>
+          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--color-primary)" }}>AI Search</span>
+        </div>
+        <input
+          value={nlpQuery}
+          onChange={e => setNlpQuery(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && parseNLP()}
+          placeholder='Try: "pet-friendly hotel in Goa under ₹4000 with pool"'
+          className="flex-1 rounded-xl px-4 py-2.5 text-sm border outline-none w-full"
+          style={{ background: "var(--color-surface-2)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }}
+        />
+        <button
+          onClick={parseNLP}
+          disabled={nlpLoading || !nlpQuery.trim()}
+          className="btn-primary px-5 py-2.5 text-sm shrink-0 disabled:opacity-50 flex items-center gap-2"
+        >
+          {nlpLoading ? (
+            <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Parsing…</>
+          ) : "✨ Smart Filter"}
+        </button>
       </motion.div>
 
       {/* ── Search bar ──────────────────────────────────── */}
@@ -321,7 +378,7 @@ const AllRooms = () => {
       </div>
 
       {/* Body */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
+      <div className="flex flex-col lg:flex-row gap-12 items-start">
         {/* Desktop filter */}
         <div className="lg:sticky lg:top-28 hidden lg:block">
           <FilterPanel filters={filters} setFilters={setFilters} selectedSort={selectedSort} setSelectedSort={setSelectedSort} onClear={clearFilters} />
@@ -340,7 +397,7 @@ const AllRooms = () => {
         {/* Grid */}
         <div className="flex-1 w-full">
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-7">
               {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
           ) : filteredRooms.length === 0 ? (
@@ -354,7 +411,7 @@ const AllRooms = () => {
           ) : (
             <motion.div initial="hidden" animate="show"
               variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
-              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-7">
               {filteredRooms.map((room, i) => <HotelCard key={room._id} room={room} index={i} />)}
             </motion.div>
           )}

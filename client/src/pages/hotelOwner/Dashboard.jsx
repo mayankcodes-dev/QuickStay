@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { io } from 'socket.io-client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAppContext } from '../../context/AppContext';
 import toast from 'react-hot-toast';
 
+const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+
+// ── Stat Card ─────────────────────────────────────────────────────
 const StatCard = ({ title, value, icon, color }) => (
   <motion.div
     initial={{ opacity: 0, y: 16 }}
@@ -22,15 +26,44 @@ const StatCard = ({ title, value, icon, color }) => (
   </motion.div>
 );
 
+// ── Live notification toast component ────────────────────────────
+const LiveBookingToast = ({ booking, onClose }) => (
+  <motion.div
+    initial={{ opacity: 0, x: 60, scale: 0.9 }}
+    animate={{ opacity: 1, x: 0, scale: 1 }}
+    exit={{ opacity: 0, x: 60 }}
+    className="flex items-start gap-3 p-4 rounded-2xl shadow-2xl"
+    style={{
+      background: 'var(--color-surface-2)',
+      border: '2px solid #E8003D',
+      minWidth: 280, maxWidth: 340,
+    }}
+  >
+    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
+      style={{ background: 'rgba(232,0,61,0.12)' }}>🏨</div>
+    <div className="flex-1 min-w-0">
+      <p className="font-bold text-sm" style={{ color: 'var(--color-text-primary)' }}>New Booking!</p>
+      <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+        {booking?.message || `${booking?.booking?.guests || 1} guest(s) just booked`}
+      </p>
+      <p className="text-xs mt-1 font-semibold" style={{ color: '#E8003D' }}>Live via Socket.io ⚡</p>
+    </div>
+    <button onClick={onClose} className="text-sm opacity-50 hover:opacity-100 shrink-0">✕</button>
+  </motion.div>
+);
+
 const statusColor = s => s === 'confirmed' ? '#16A34A' : s === 'cancelled' ? '#DC2626' : '#D97706';
 const statusBg    = s => s === 'confirmed' ? '#DCFCE7' : s === 'cancelled' ? '#FEE2E2' : '#FEF3C7';
 
 const Dashboard = () => {
-  const { axios, getToken } = useAppContext();
-  const [dash,    setDash]    = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { axios, getToken, user } = useAppContext();
+  const [dash,       setDash]       = useState(null);
+  const [loading,    setLoading]    = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [liveNotifs, setLiveNotifs] = useState([]); // array of live booking payloads
+  const socketRef = useRef(null);
 
+  // ── Fetch dashboard data ───────────────────────────────────────
   const fetchDash = async () => {
     try {
       setLoading(true);
@@ -43,6 +76,7 @@ const Dashboard = () => {
     finally { setLoading(false); }
   };
 
+  // ── Update booking status ──────────────────────────────────────
   const updateStatus = async (bookingId, status) => {
     setUpdatingId(bookingId);
     try {
@@ -55,7 +89,35 @@ const Dashboard = () => {
     finally { setUpdatingId(null); }
   };
 
-  useEffect(() => { fetchDash(); }, []);
+  // ── Socket.io — join owner notification channel ────────────────
+  useEffect(() => {
+    fetchDash();
+
+    if (!user?._id) return;
+
+    const socket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5,
+    });
+
+    socket.on('connect', () => {
+      socket.emit('join:owner', user._id);
+      console.log('[Dashboard] Joined owner notification channel');
+    });
+
+    // New booking → show live toast + refresh table
+    socket.on('new:booking', (payload) => {
+      const id = Date.now();
+      setLiveNotifs(prev => [...prev, { id, ...payload }]);
+      // Auto-remove after 8 seconds
+      setTimeout(() => setLiveNotifs(prev => prev.filter(n => n.id !== id)), 8000);
+      // Refresh dashboard data
+      fetchDash();
+    });
+
+    socketRef.current = socket;
+    return () => socket.disconnect();
+  }, [user?._id]);
 
   if (loading) return (
     <div className="p-6 flex flex-col gap-4">
@@ -63,13 +125,38 @@ const Dashboard = () => {
     </div>
   );
 
-  const revenueData = dash?.revenueData?.slice(-14) || []; // last 14 days
+  const revenueData = dash?.revenueData?.slice(-14) || [];
 
   return (
     <div className="p-6 md:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold font-display" style={{ color: 'var(--color-text-primary)' }}>Dashboard</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>Your hotel performance at a glance</p>
+      {/* ── Live Notification Toasts ───────────────────────────── */}
+      <div className="fixed top-6 right-6 z-50 flex flex-col gap-3 pointer-events-none">
+        <AnimatePresence>
+          {liveNotifs.map(notif => (
+            <div key={notif.id} className="pointer-events-auto">
+              <LiveBookingToast
+                booking={notif}
+                onClose={() => setLiveNotifs(prev => prev.filter(n => n.id !== notif.id))}
+              />
+            </div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold font-display" style={{ color: 'var(--color-text-primary)' }}>Dashboard</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>Your hotel performance at a glance</p>
+        </div>
+        {/* Live indicator */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+          style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)', color: '#16A34A' }}>
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+          </span>
+          Live updates active
+        </div>
       </div>
 
       {/* Stat Cards */}
@@ -130,7 +217,7 @@ const Dashboard = () => {
             <tbody>
               {(dash?.bookings || []).slice(0, 10).map((b, i) => (
                 <tr key={b._id} className="border-t" style={{ borderColor: 'var(--color-border)', background: i % 2 === 0 ? 'transparent' : 'var(--color-surface-3)' }}>
-                  <td className="px-4 py-3" style={{ color: 'var(--color-text-primary)' }}>{b.user?.split('').slice(0,8).join('')}…</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--color-text-primary)' }}>{b.user?.username || String(b.user).slice(0,8)}…</td>
                   <td className="px-4 py-3" style={{ color: 'var(--color-text-secondary)' }}>{b.room?.roomType || '—'}</td>
                   <td className="px-4 py-3 text-xs" style={{ color: 'var(--color-text-muted)' }}>{new Date(b.checkInDate).toLocaleDateString('en-IN')}</td>
                   <td className="px-4 py-3 font-semibold" style={{ color: 'var(--color-primary)' }}>₹{b.totalPrice?.toLocaleString('en-IN')}</td>

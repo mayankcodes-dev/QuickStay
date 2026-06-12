@@ -46,7 +46,7 @@ const Home = () => {
       <main id="main-content">
         <section
           aria-labelledby="hotels-heading"
-          className="section-px py-16 md:py-24"
+          className="section-px py-20 md:py-32"
         >
           {/* Section header */}
           <motion.div
@@ -54,7 +54,7 @@ const Home = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="flex items-end justify-between mb-10"
+            className="flex items-end justify-between mb-14"
           >
             <div>
               <p
@@ -65,7 +65,7 @@ const Home = () => {
               </p>
               <h2
                 id="hotels-heading"
-                className="font-display text-2xl md:text-3xl font-bold"
+                className="font-display text-3xl md:text-4xl font-bold"
                 style={{ color: "var(--color-text-primary)" }}
               >
                 {activeCategory === "all"
@@ -100,7 +100,7 @@ const Home = () => {
           </motion.div>
 
           {/* Stats strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-14">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
             {STATS.map((s, i) => (
               <motion.div
                 key={s.label}
@@ -108,10 +108,11 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
-                className="text-center p-6 rounded-2xl"
+                className="text-center p-8 rounded-3xl"
                 style={{
                   background: "var(--color-surface-2)",
-                  boxShadow: "var(--shadow-sm)",
+                  boxShadow: "var(--shadow-md)",
+                  border: "1px solid var(--color-border)",
                 }}
               >
                 <div className="text-3xl mb-2">{s.icon}</div>
@@ -132,7 +133,7 @@ const Home = () => {
           </div>
 
           {/* Hotel grid or skeletons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7">
             {isLoading ? (
               Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
             ) : filteredRooms.length > 0 ? (
@@ -150,7 +151,7 @@ const Home = () => {
           </div>
 
           {/* Mobile — view all CTA */}
-          <div className="text-center mt-10 md:hidden">
+          <div className="text-center mt-14 md:hidden">
             <Link to="/rooms" className="btn-outline text-sm">
               View All Hotels →
             </Link>

@@ -25,23 +25,26 @@ const HotelCard = ({ room, index }) => {
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.45, delay: (index % 4) * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -4, transition: { duration: 0.25, ease: [0.34, 1.56, 0.64, 1] } }}
-      className="rounded-2xl overflow-hidden flex flex-col"
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.5, delay: (index % 4) * 0.09, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -6, transition: { duration: 0.28, ease: [0.34, 1.56, 0.64, 1] } }}
+      className="rounded-3xl overflow-hidden flex flex-col"
       style={{
         background: "var(--color-surface-2)",
         boxShadow: "var(--shadow-md)",
-        transition: "box-shadow 0.25s ease",
+        transition: "box-shadow 0.3s ease",
+        border: "1px solid var(--color-border)",
       }}
+      onMouseEnter={e => e.currentTarget.style.boxShadow = "var(--shadow-xl)"}
+      onMouseLeave={e => e.currentTarget.style.boxShadow = "var(--shadow-md)"}
     >
       {/* Image — wrapped in Link for full keyboard + screen-reader support */}
       <Link
         to={hotelPath}
         onClick={() => window.scrollTo(0, 0)}
-        className="relative block h-52 overflow-hidden"
+        className="relative block h-60 overflow-hidden"
         aria-label={`View ${room.hotel?.name}`}
         tabIndex={0}
       >
@@ -96,13 +99,30 @@ const HotelCard = ({ room, index }) => {
       </Link>
 
       {/* Content */}
-      <div className="p-5 flex flex-col flex-1 gap-3">
+      <div className="p-6 flex flex-col flex-1 gap-4">
 
+        {/* Room type tag */}
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[11px] font-bold px-2.5 py-0.5 rounded-full"
+            style={{ background: "var(--color-primary-light)", color: "var(--color-primary)" }}
+          >
+            {room.roomType}
+          </span>
+          {room.category && (
+            <span
+              className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
+              style={{ background: "var(--color-surface-3)", color: "var(--color-text-muted)" }}
+            >
+              {room.category}
+            </span>
+          )}
+        </div>
         {/* Hotel + Location */}
         <div>
-          <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-start justify-between gap-2 mb-2">
             <h3
-              className="font-bold text-sm leading-snug"
+              className="font-bold text-base leading-snug"
               style={{ color: "var(--color-text-primary)" }}
             >
               {room.hotel?.name}
@@ -116,17 +136,10 @@ const HotelCard = ({ room, index }) => {
           </div>
 
           <p
-            className="text-xs flex items-center gap-1"
+            className="text-xs flex items-center gap-1.5"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="w-3 h-3 shrink-0"
-              aria-hidden="true"
-            >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 shrink-0" aria-hidden="true">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
@@ -135,7 +148,8 @@ const HotelCard = ({ room, index }) => {
         </div>
 
         {/* Amenities */}
-        <div className="flex flex-wrap gap-1.5" aria-label="Amenities">
+
+        <div className="flex flex-wrap gap-2" aria-label="Amenities">
           {(room.amenities || []).slice(0, 3).map((a, i) => (
             <span
               key={i}
@@ -152,25 +166,25 @@ const HotelCard = ({ room, index }) => {
 
         {/* Price + CTA */}
         <div
-          className="flex items-center justify-between mt-auto pt-4 border-t"
+          className="flex items-center justify-between mt-auto pt-5 border-t"
           style={{ borderColor: "var(--color-border)" }}
         >
           <div>
             <span
-              className="font-black text-lg"
+              className="font-black text-xl"
               style={{ color: "var(--color-primary)" }}
             >
               {currency}{room.pricePerNight?.toLocaleString("en-IN")}
             </span>
-            <span className="text-xs ml-0.5" style={{ color: "var(--color-text-muted)" }}>
-              /night
+            <span className="text-xs ml-1" style={{ color: "var(--color-text-muted)" }}>
+              / night
             </span>
           </div>
 
           <Link
             to={hotelPath}
             onClick={() => window.scrollTo(0, 0)}
-            className="btn-primary text-xs py-2 px-4"
+            className="btn-primary text-xs py-2.5 px-5"
           >
             Book Now
           </Link>

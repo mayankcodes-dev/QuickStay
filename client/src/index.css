@@ -71,6 +71,7 @@
   --space-16: 64px;
   --space-20: 80px;
   --space-24: 96px;
+  --space-32: 128px;
 
   /* ── Easing ─────────────────────────────────────── */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -151,11 +152,16 @@ a:focus-visible {
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
 }
 
-p { line-height: 1.7; }
+p { line-height: 1.75; }
+
+/* Large display headlines */
+.display-xl  { font-size: clamp(2.5rem, 6vw, 5rem);   line-height: 1.04; letter-spacing: -0.04em; }
+.display-lg  { font-size: clamp(2rem, 4.5vw, 3.5rem); line-height: 1.06; letter-spacing: -0.035em; }
+.display-md  { font-size: clamp(1.5rem, 3vw, 2.25rem);line-height: 1.1;  letter-spacing: -0.025em; }
 
 /* ============================================================
    BUTTONS
@@ -343,42 +349,99 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ============================================================
-   SECTION SPACING — generous whitespace system
+   SECTION SPACING — generous whitespace + negative space system
+   Uses Stripe / Linear-inspired breathing room
    ============================================================ */
-.section-y        { padding-top: 6rem;   padding-bottom: 6rem; }
-.section-y-sm     { padding-top: 4rem;   padding-bottom: 4rem; }
-.section-y-lg     { padding-top: 8rem;   padding-bottom: 8rem; }
+
+/* Vertical rhythm */
+.section-y        { padding-top: 7rem;    padding-bottom: 7rem; }
+.section-y-sm     { padding-top: 4.5rem;  padding-bottom: 4.5rem; }
+.section-y-lg     { padding-top: 10rem;   padding-bottom: 10rem; }
+.section-y-xl     { padding-top: 13rem;   padding-bottom: 13rem; }
+
+/* Horizontal padding — wider on larger screens */
 .section-px       { padding-left: 1.25rem; padding-right: 1.25rem; }
+
+@media (min-width: 640px)  { .section-px { padding-left: 2.5rem;  padding-right: 2.5rem; } }
+@media (min-width: 768px)  { .section-px { padding-left: 5rem;    padding-right: 5rem; } }
+@media (min-width: 1024px) { .section-px { padding-left: 7rem;    padding-right: 7rem; } }
+@media (min-width: 1280px) { .section-px { padding-left: 10rem;   padding-right: 10rem; } }
+@media (min-width: 1536px) { .section-px { padding-left: 12rem;   padding-right: 12rem; } }
 
 /* Content max-width centering */
 .section-inner {
-  max-width: 1280px;
+  max-width: 1320px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
 }
 
-@media (min-width: 640px) {
-  .section-px { padding-left: 2rem;  padding-right: 2rem; }
+.section-inner-narrow {
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
 }
-@media (min-width: 768px) {
-  .section-px { padding-left: 4rem;  padding-right: 4rem; }
-}
-@media (min-width: 1024px) {
-  .section-px { padding-left: 6rem;  padding-right: 6rem; }
-}
-@media (min-width: 1280px) {
-  .section-px { padding-left: 8rem;  padding-right: 8rem; }
-}
+
+/* Section divider breathing room */
+.section-break    { margin-top: 5rem; }
+.section-break-lg { margin-top: 8rem; }
+
+/* Grid gap utilities */
+.gap-section      { gap: 4rem; }
+.gap-section-sm   { gap: 2.5rem; }
 
 /* ============================================================
    PAGE LAYOUT — breathing room
    ============================================================ */
 
-/* Pages with the floating navbar need top padding */
-.page-top      { padding-top: 6.5rem; }   /* 52px navbar + 52px gap */
-.page-bottom   { padding-bottom: 5rem; }  /* above mobile nav */
+/* Pages with the floating navbar */
+.page-top      { padding-top: 7rem; }
+.page-bottom   { padding-bottom: 6rem; }
 
 @media (min-width: 640px) {
-  .page-bottom { padding-bottom: 2rem; }
+  .page-top    { padding-top: 7.5rem; }
+  .page-bottom { padding-bottom: 4rem; }
 }
+
+@media (min-width: 1024px) {
+  .page-top    { padding-top: 8rem; }
+  .page-bottom { padding-bottom: 5rem; }
+}
+
+/* ============================================================
+   NEGATIVE SPACE HELPERS
+   ============================================================ */
+
+/* Visually separate with generous padding */
+.breathing-box {
+  padding: 3rem 3.5rem;
+  border-radius: var(--radius-2xl);
+}
+
+@media (max-width: 640px) {
+  .breathing-box { padding: 2rem 1.5rem; }
+}
+
+/* Loose line-height for body text */
+.text-loose { line-height: 1.85; }
+
+/* Wider letter spacing for caps labels */
+.label-caps {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Soft horizontal rule */
+.divider {
+  border: none;
+  height: 1px;
+  background: var(--color-border);
+  margin: 3rem 0;
+}
+
+/* Card inner padding */
+.card-body { padding: 2rem 2.25rem; }
+@media (max-width: 640px) { .card-body { padding: 1.5rem 1.25rem; } }
