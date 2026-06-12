@@ -3,11 +3,12 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "react-hot-toast";
 import { useAppContext } from "./context/AppContext";
-import Navbar    from "./components/Navbar";
-import Footer    from "./components/Footer";
-import Loader    from "./components/Loader";
-import HotelReg  from "./components/HotelReg";
+import Navbar      from "./components/Navbar";
+import Footer      from "./components/Footer";
+import Loader      from "./components/Loader";
+import HotelReg    from "./components/HotelReg";
 import PageTransition from "./components/PageTransition";
+import MayaChatbot from "./components/MayaChatbot";
 
 // ── Lazy-loaded pages (code splitting) ────────────────────────
 const Home               = lazy(() => import("./pages/Home"));
@@ -70,6 +71,9 @@ const App = () => {
 
         {!hideShell && <Navbar />}
         {showHotelReg && <HotelReg />}
+
+        {/* Maya AI Chatbot — shown on public pages only */}
+        {!hideShell && <MayaChatbot />}
 
         <div className={`min-h-[70vh] ${!hideShell ? "pt-16" : ""}`}>
           <Suspense fallback={<PageLoader />}>

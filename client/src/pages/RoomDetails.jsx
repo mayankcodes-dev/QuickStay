@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { assets, roomCommonData } from "../assets/assets";
 import StarRating from "../components/StarRating";
 import SkeletonCard from "../components/SkeletonCard";
+import LiveViewers from "../components/LiveViewers";
 import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
 import { calcNights } from "../utils/helpers";
@@ -198,6 +199,9 @@ const RoomDetails = () => {
             {room.hotel.address}
           </div>
         </div>
+
+        {/* ── Live Viewers badge ───────────────────────── */}
+        <LiveViewers roomId={id} />
       </motion.div>
 
       {/* ── Image Gallery ────────────────────────────────────── */}

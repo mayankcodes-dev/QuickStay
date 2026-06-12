@@ -1,10 +1,11 @@
-import transporter from '../configs/nodemailer.js';
-import Booking from '../models/Booking.js';
-import Hotel   from '../models/Hotel.js';
-import Room    from '../models/Room.js';
-import Razorpay from 'razorpay';
-import stripe   from 'stripe';
-import crypto   from 'crypto';
+import transporter  from '../configs/nodemailer.js';
+import Booking      from '../models/Booking.js';
+import Hotel        from '../models/Hotel.js';
+import Room         from '../models/Room.js';
+import Razorpay     from 'razorpay';
+import stripe       from 'stripe';
+import crypto       from 'crypto';
+import { bookingBus } from '../events/bookingEvents.js';
 
 // ─── Coupons ──────────────────────────────────────────────────
 const COUPONS = {
@@ -168,8 +169,16 @@ export const createBooking = async (req, res) => {
             paymentMethod: paymentMethod || 'pay at hotel',
         });
 
-        // Send confirmation email (non-blocking)
+        // Non-blocking: send confirmation email
         sendBookingEmail(req.user.email, req.user.username, roomData, booking);
+
+        // ── Event Bus: emit booking:created ──────────────────────
+        // Listeners handle: owner socket notification + room availability broadcast
+        bookingBus.emit('booking:created', {
+            booking,
+            roomId:  room,
+            ownerId: roomData.hotel.owner?.toString(),
+        });
 
         res.json({
             success: true,
@@ -267,6 +276,10 @@ export const cancelBooking = async (req, res) => {
                 : 'Booking cancelled. No refund (within 48h of check-in).',
             refundEligible,
         });
+
+        // ── Event Bus: emit booking:cancelled ──────────────────────
+        bookingBus.emit('booking:cancelled', { booking, roomId: booking.room?.toString() });
+
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
