@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>You're Offline — YoYo Rooms</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #080810;
+      color: #EEEEF8;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      -webkit-font-smoothing: antialiased;
+    }
+    .icon {
+      width: 96px;
+      height: 96px;
+      background: rgba(232,0,61,0.12);
+      border: 2px solid rgba(232,0,61,0.30);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin-bottom: 2rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(232,0,61,0.3); }
+      50% { box-shadow: 0 0 0 16px rgba(232,0,61,0); }
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #E8003D, #FF6B6B);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    p {
+      color: #9898B8;
+      font-size: 1rem;
+      line-height: 1.75;
+      max-width: 340px;
+      margin-bottom: 2.5rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 9999px;
+      background: #E8003D;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 8px 24px rgba(232,0,61,0.40);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(232,0,61,0.55);
+    }
+    .tip {
+      margin-top: 2.5rem;
+      font-size: 0.8rem;
+      color: #5A5A7A;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon">✈️</div>
+  <h1>You're Offline</h1>
+  <p>No internet connection detected. Check your Wi-Fi or mobile data and try again.</p>
+  <a class="btn" href="/" onclick="location.reload(); return false;">
+    🔄 Try Again
+  </a>
+  <p class="tip">Pages you've visited before may still be available from cache.</p>
+</body>
+</html>
