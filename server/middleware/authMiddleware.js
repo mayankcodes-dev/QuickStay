@@ -22,4 +22,6 @@ const protect = async (req, res, next) => {
     }
 };
 
+// Support both: import protect from '...' AND import { protect } from '...'
+export { protect };
 export default protect;

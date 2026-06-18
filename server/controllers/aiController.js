@@ -11,7 +11,15 @@ import Groq    from 'groq-sdk';
 import Booking from '../models/Booking.js';
 import Review  from '../models/Review.js';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Lazy-init: only throws if GROQ_API_KEY is missing at call-time, not module-load time
+let _groq = null;
+const getGroq = () => {
+    if (!process.env.GROQ_API_KEY) {
+        throw new Error('GROQ_API_KEY is not configured. Add it to server/.env');
+    }
+    if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    return _groq;
+};
 
 // ── System prompt — Maya's personality & knowledge ───────────────
 const MAYA_SYSTEM_PROMPT = `You are Maya, YoYo Rooms' friendly AI assistant — like Air India's Tia but for hotels.
@@ -84,7 +92,7 @@ export const aiChat = async (req, res) => {
             } catch (_) {}
         }
 
-        const completion = await groq.chat.completions.create({
+        const completion = await getGroq().chat.completions.create({
             model: 'llama3-8b-8192',
             messages,
             max_tokens: 200,
@@ -133,7 +141,7 @@ Rules:
 - roomType must exactly match one allowed value or null
 - category must exactly match one allowed value or null`;
 
-        const completion = await groq.chat.completions.create({
+        const completion = await getGroq().chat.completions.create({
             model: 'llama3-8b-8192',
             messages: [{ role: 'user', content: prompt }],
             max_tokens: 180,
@@ -186,7 +194,7 @@ Be specific, not generic. Flowing prose only, no bullet points.
 Reviews:
 ${reviewText}`;
 
-        const completion = await groq.chat.completions.create({
+        const completion = await getGroq().chat.completions.create({
             model: 'llama3-8b-8192',
             messages: [{ role: 'user', content: prompt }],
             max_tokens: 150,
