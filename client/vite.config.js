@@ -11,7 +11,8 @@ export default defineConfig({
       // ── Service Worker strategy ─────────────────────────────────
       registerType: 'prompt',          // show our own update UI
       injectRegister: 'auto',
-      devOptions: { enabled: true },   // test SW in dev mode too
+      // devOptions only for local testing - not needed in prod
+      // devOptions: { enabled: true },
 
       // ── Assets to include in precache ──────────────────────────
       includeAssets: [
@@ -116,12 +117,12 @@ export default defineConfig({
         // Precache all build output
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,webp,webmanifest}'],
 
-        // Show offline.html for navigation requests when offline
-        navigateFallback: '/offline.html',
-        navigateFallbackDenylist: [/^\/api\//, /^\/sw\.js/],
-
-        // Don't cache API routes in the precache manifest
-        globIgnores: ['**/node_modules/**', '**/sw.js'],
+        // SPA fallback - serve index.html for all app routes (NOT offline.html)
+        // offline.html is only served when the network is truly unavailable
+        navigateFallback: '/index.html',
+        // Only apply SPA fallback to actual app routes (not API, not SW files)
+        navigateFallbackAllowlist: [/^(?!\/(api|sw\.js|workbox|offline\.html|assets|pwa|favicon|apple))/],
+        navigateFallbackDenylist: [/^\/(api|sw\.js|workbox)/, /\.\w+$/],
 
         // ── Runtime caching strategies ───────────────────────────
         runtimeCaching: [
@@ -154,19 +155,19 @@ export default defineConfig({
             },
           },
 
-          // API routes — network-first, 5-min cache fallback
+          // API routes — network-first, 10s timeout
           {
             urlPattern: /\/api\/.*/i,
             handler:    'NetworkFirst',
             options: {
               cacheName:       'api-cache',
-              networkTimeoutSeconds: 8,
+              networkTimeoutSeconds: 10,
               expiration:      { maxEntries: 50, maxAgeSeconds: 60 * 5 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
 
-          // All other same-origin requests — network-first
+          // All other same-origin — network-first with short timeout
           {
             urlPattern: ({ url }) => url.origin === self.location.origin,
             handler:    'NetworkFirst',
