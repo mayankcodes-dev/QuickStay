@@ -22,13 +22,12 @@ const STATS = [
 ];
 
 const Home = () => {
-  const { rooms } = useAppContext();
+  const { rooms, roomsLoaded } = useAppContext();
   const [activeCategory, setActiveCategory] = useState("all");
 
-  // Rooms are loading when the array is still empty on first mount.
-  // Once fetchRooms resolves, the array will have items (or stay [] if the
-  // DB is genuinely empty — you can differentiate with a `loading` flag if needed).
-  const isLoading = rooms.length === 0;
+  // Show skeleton until the first API response arrives (success OR error).
+  // rooms.length === 0 was wrong — it kept the skeleton forever when DB is empty.
+  const isLoading = !roomsLoaded;
 
   const filteredRooms = useMemo(() => {
     if (activeCategory === "all") return rooms.slice(0, 8);

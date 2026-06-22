@@ -29,6 +29,7 @@ export const AppProvider = ({ children }) => {
   const [showHotelReg,  setShowHotelReg]  = useState(false);
   const [searchedCities,setSearchedCities]= useState([]);
   const [rooms,         setRooms]         = useState([]);
+  const [roomsLoaded,   setRoomsLoaded]   = useState(false);   // true once fetch resolves
   const [wishlist,      setWishlist]      = useState([]);
 
   // ── Axios auth header ───────────────────────────────────────
@@ -141,6 +142,7 @@ export const AppProvider = ({ children }) => {
       if (data.success) setRooms(data.rooms);
       else toast.error(data.message);
     } catch (err) { toast.error(err.message); }
+    finally { setRoomsLoaded(true); }   // always mark done, even on error
   }, []);
 
   useEffect(() => { fetchRooms(); }, []);
@@ -154,7 +156,7 @@ export const AppProvider = ({ children }) => {
     saveSession, updateUser,
     showHotelReg, setShowHotelReg,
     searchedCities, setSearchedCities,
-    rooms, setRooms, fetchRooms,
+    rooms, setRooms, fetchRooms, roomsLoaded,
     wishlist, toggleWishlist,
     darkMode, toggleDarkMode,
   };
