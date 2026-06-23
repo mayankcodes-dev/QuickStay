@@ -4,25 +4,38 @@ import { cities } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 
 const CLOUD = "dgqgzmzed";
-
-// ── Hero video: direct Pexels URL (works in browser <video> tags)
-// Note: Cloudinary can't server-fetch Pexels, but browser can stream directly.
-// To self-host: upload manually at cloudinary.com/console → Media Library → Upload
-// Then set HERO_VIDEO = cloudVideo("yoyo/hero_video")
-const HERO_VIDEO  = "https://videos.pexels.com/video-files/3571264/3571264-uhd_2732_1440_25fps.mp4";
+const HERO_VIDEO     = "https://videos.pexels.com/video-files/3571264/3571264-uhd_2732_1440_25fps.mp4";
 const HERO_VIDEO_ALT = "https://videos.pexels.com/video-files/8547798/8547798-hd_1920_1080_25fps.mp4";
-
-// ── Poster: already on Cloudinary ──────────────────────────────
 const FALLBACK_POSTER = `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_1920/yoyo/rooms/goa_1`;
 
 const trustBadges = [
-  { icon: "🏨", label: "10,000+", sub: "Verified Hotels" },
-  { icon: "😊", label: "1M+",     sub: "Happy Guests" },
-  { icon: "⚡", label: "Instant", sub: "Confirmation" },
-  { icon: "💰", label: "Best",    sub: "Price Guarantee" },
-  { icon: "⭐", label: "4.8/5",   sub: "Avg. Rating" },
-  { icon: "🛡️", label: "100%",   sub: "Secure Payments" },
+  { icon: "🏨", label: "10,000+", sub: "Hotels" },
+  { icon: "😊", label: "1M+",     sub: "Guests" },
+  { icon: "⚡", label: "Instant", sub: "Booking" },
+  { icon: "💰", label: "Best",    sub: "Prices" },
+  { icon: "⭐", label: "4.8/5",   sub: "Rated" },
+  { icon: "🛡️", label: "100%",   sub: "Secure" },
 ];
+
+// ── Input field wrapper
+const SearchField = ({ label, icon, borderRight = true, children }) => (
+  <div
+    className="flex flex-col px-5 py-4"
+    style={{
+      borderRight: borderRight ? "1px solid rgba(0,0,0,0.07)" : "none",
+      minWidth: 0,
+      flex: 1,
+    }}
+  >
+    <label
+      className="text-[10px] font-black uppercase tracking-widest mb-1"
+      style={{ color: "#E8003D" }}
+    >
+      {icon} {label}
+    </label>
+    {children}
+  </div>
+);
 
 const Hero = () => {
   const { navigate, getToken, axios, setSearchedCities } = useAppContext();
@@ -59,248 +72,258 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative w-full h-screen min-h-[600px] overflow-hidden -mt-16">
+    <section className="relative w-full h-screen min-h-[640px] overflow-hidden -mt-16">
 
-      {/* ── Cloudinary-postererd, Pexels-streamed cinematic video ─── */}
+      {/* ── Background video ──────────────────────────────── */}
       <video
-        className="absolute inset-0 w-full h-full object-cover"
-        autoPlay
-        muted
-        loop
-        playsInline
+        className="absolute inset-0 w-full h-full object-cover scale-105"
+        autoPlay muted loop playsInline
         poster={FALLBACK_POSTER}
       >
         <source src={HERO_VIDEO}     type="video/mp4" />
         <source src={HERO_VIDEO_ALT} type="video/mp4" />
       </video>
 
-      {/* ── Deep cinematic overlay — dark bottom-heavy like SpaceX ── */}
+      {/* ── Multi-layer cinematic overlay ─────────────────── */}
+      {/* Base dark layer */}
+      <div className="absolute inset-0" style={{ background: "rgba(5,5,15,0.52)" }} />
+      {/* Bottom-heavy gradient for search bar readability */}
       <div
         className="absolute inset-0"
         style={{
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(4,4,12,0.60) 55%, rgba(4,4,12,0.92) 100%)",
+          background: "linear-gradient(to bottom, transparent 0%, rgba(5,5,20,0.40) 40%, rgba(5,5,20,0.75) 70%, rgba(5,5,20,0.90) 100%)",
         }}
       />
-
-      {/* ── Subtle red vignette on edges ─────────────────────── */}
+      {/* Top vignette so navbar blends */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "linear-gradient(to bottom, rgba(0,0,0,0.30) 0%, transparent 25%)",
+        }}
+      />
+      {/* Subtle red atmospheric glow from bottom-left */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background:
-            "radial-gradient(ellipse at center, transparent 50%, rgba(232,0,61,0.08) 100%)",
+          background: "radial-gradient(ellipse 80% 60% at 20% 110%, rgba(232,0,61,0.18) 0%, transparent 70%)",
         }}
       />
 
-      {/* ── Content ──────────────────────────────────────────── */}
+      {/* ── Content ───────────────────────────────────────── */}
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 text-center">
 
-        {/* Badge */}
+        {/* Platform badge */}
         <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y:   0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="flex items-center gap-2 px-4 py-1.5 rounded-full text-white text-xs font-bold mb-6 backdrop-blur-sm"
+          initial={{ opacity: 0, y: -20, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-8"
           style={{
-            background: "rgba(232,0,61,0.88)",
-            border: "1px solid rgba(255,255,255,0.22)",
-            letterSpacing: "0.06em",
+            background: "rgba(232,0,61,0.15)",
+            border: "1px solid rgba(232,0,61,0.45)",
+            backdropFilter: "blur(12px)",
           }}
         >
-          <svg viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-          </svg>
-          INDIA'S FASTEST GROWING HOTEL PLATFORM
+          <span style={{ color: "#FF4570" }}>★</span>
+          <span
+            className="text-xs font-bold tracking-[0.12em] uppercase"
+            style={{ color: "rgba(255,255,255,0.92)" }}
+          >
+            India's Fastest Growing Hotel Platform
+          </span>
         </motion.div>
 
-        {/* Headline */}
+        {/* ── Main headline ──────────────────────────────── */}
         <motion.h1
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y:  0 }}
-          transition={{ duration: 0.75, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-[82px] font-extrabold text-white leading-[1.0] mb-5 max-w-5xl"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          className="font-display font-extrabold text-white leading-[1.02] mb-4 max-w-4xl"
           style={{
-            letterSpacing: "-0.03em",
-            textShadow: "0 4px 32px rgba(0,0,0,0.85), 0 2px 8px rgba(0,0,0,0.70), 0 0 80px rgba(0,0,0,0.40)",
+            fontSize: "clamp(2.4rem, 7vw, 5.2rem)",
+            letterSpacing: "-0.035em",
+            textShadow: "0 2px 40px rgba(0,0,0,0.6)",
           }}
         >
-          Your Perfect Stay,{" "}
-          <span
-            style={{
-              background: "linear-gradient(135deg, #E8003D 0%, #FF6B6B 60%, #F5A623 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              filter: "drop-shadow(0 2px 12px rgba(232,0,61,0.55))",
-            }}
-          >
-            One Click
-          </span>{" "}
-          Away
+          Your Perfect Stay,
+          <br />
+          <span style={{ color: "#FF3B6B" }}>One Click</span>
+          {" "}Away
         </motion.h1>
 
         {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y:  0 }}
-          transition={{ duration: 0.7, delay: 0.32 }}
-          className="text-white/85 text-base md:text-lg max-w-lg mb-9 leading-relaxed"
-          style={{ textShadow: "0 2px 16px rgba(0,0,0,0.80), 0 1px 4px rgba(0,0,0,0.60)" }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.3 }}
+          className="text-lg max-w-md mb-10 leading-relaxed"
+          style={{
+            color: "rgba(255,255,255,0.72)",
+            textShadow: "0 1px 12px rgba(0,0,0,0.5)",
+          }}
         >
           Budget to luxury — 10,000+ verified hotels across India.
-          <br className="hidden sm:block" />
           Book instantly, pay your way.
         </motion.p>
 
-        {/* ── Glassmorphism search bar ──────────────────────── */}
+        {/* ── Search bar ─────────────────────────────────── */}
         <motion.form
-          initial={{ opacity: 0, y: 32, scale: 0.97 }}
-          animate={{ opacity: 1, y:  0, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.42, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, y: 36, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.75, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
           onSubmit={onSearch}
-          className="w-full max-w-4xl rounded-2xl overflow-hidden"
+          className="w-full max-w-4xl"
           style={{
-            background: "rgba(255,255,255,0.94)",
-            backdropFilter: "blur(28px) saturate(180%)",
-            WebkitBackdropFilter: "blur(28px) saturate(180%)",
-            border: "1px solid rgba(255,255,255,0.75)",
-            boxShadow: "0 24px 64px rgba(0,0,0,0.35), 0 0 0 1px rgba(232,0,61,0.08)",
+            background: "rgba(255,255,255,0.97)",
+            backdropFilter: "blur(32px) saturate(200%)",
+            WebkitBackdropFilter: "blur(32px) saturate(200%)",
+            borderRadius: "20px",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.15)",
+            overflow: "hidden",
           }}
         >
           <div className="flex flex-col md:flex-row items-stretch">
 
             {/* Destination */}
-            <div
-              className="flex-1 flex flex-col px-5 py-4 md:border-r"
-              style={{ borderColor: "rgba(10,10,40,0.10)" }}
-            >
-              <label className="text-xs font-black uppercase tracking-widest mb-1.5"
-                style={{ color: "#E8003D" }}>
-                📍 Where to?
-              </label>
+            <SearchField label="Where to?" icon="📍" borderRight>
               <input
                 list="yoyo-destinations"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 placeholder="Mumbai, Goa, Jaipur…"
                 required
-                className="bg-transparent text-sm font-semibold outline-none w-full placeholder:font-normal"
+                className="bg-transparent text-sm font-semibold outline-none w-full placeholder:text-gray-400 placeholder:font-normal"
                 style={{ color: "#0D0D1A" }}
               />
               <datalist id="yoyo-destinations">
                 {cities.map((c, i) => <option key={i} value={c} />)}
               </datalist>
-            </div>
+            </SearchField>
 
             {/* Check-in */}
-            <div
-              className="flex-1 flex flex-col px-5 py-4 md:border-r"
-              style={{ borderColor: "rgba(10,10,40,0.10)" }}
-            >
-              <label className="text-xs font-black uppercase tracking-widest mb-1.5"
-                style={{ color: "#E8003D" }}>
-                📅 Check In
-              </label>
+            <SearchField label="Check In" icon="📅" borderRight>
               <input
                 type="date"
                 min={today}
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
                 className="bg-transparent text-sm font-semibold outline-none w-full"
-                style={{ color: "#0D0D1A" }}
+                style={{ color: checkIn ? "#0D0D1A" : "#9ca3af" }}
               />
-            </div>
+            </SearchField>
 
             {/* Check-out */}
-            <div
-              className="flex-1 flex flex-col px-5 py-4 md:border-r"
-              style={{ borderColor: "rgba(10,10,40,0.10)" }}
-            >
-              <label className="text-xs font-black uppercase tracking-widest mb-1.5"
-                style={{ color: "#E8003D" }}>
-                📅 Check Out
-              </label>
+            <SearchField label="Check Out" icon="📅" borderRight>
               <input
                 type="date"
                 min={checkIn || tomorrow}
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
                 className="bg-transparent text-sm font-semibold outline-none w-full"
-                style={{ color: "#0D0D1A" }}
+                style={{ color: checkOut ? "#0D0D1A" : "#9ca3af" }}
               />
-            </div>
+            </SearchField>
 
             {/* Guests */}
             <div
-              className="flex flex-col px-5 py-4 w-28 md:border-r"
-              style={{ borderColor: "rgba(10,10,40,0.10)" }}
+              className="flex flex-col px-5 py-4"
+              style={{ borderRight: "1px solid rgba(0,0,0,0.07)", minWidth: "100px" }}
             >
-              <label className="text-xs font-black uppercase tracking-widest mb-1.5"
-                style={{ color: "#E8003D" }}>
+              <label
+                className="text-[10px] font-black uppercase tracking-widest mb-1"
+                style={{ color: "#E8003D" }}
+              >
                 👤 Guests
               </label>
-              <input
-                type="number"
-                min={1}
-                max={10}
-                value={guests}
-                onChange={(e) => setGuests(Number(e.target.value))}
-                className="bg-transparent text-sm font-semibold outline-none w-full"
-                style={{ color: "#0D0D1A" }}
-              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGuests(g => Math.max(1, g - 1))}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition hover:bg-gray-100"
+                  style={{ color: "#E8003D", border: "1px solid rgba(232,0,61,0.3)" }}
+                >−</button>
+                <span className="text-sm font-bold text-gray-800 w-4 text-center">{guests}</span>
+                <button
+                  type="button"
+                  onClick={() => setGuests(g => Math.min(10, g + 1))}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition hover:bg-gray-100"
+                  style={{ color: "#E8003D", border: "1px solid rgba(232,0,61,0.3)" }}
+                >+</button>
+              </div>
             </div>
 
             {/* Search CTA */}
-            <div className="flex items-center px-3 py-3">
+            <div className="flex items-center p-3">
               <button
                 type="submit"
-                className="flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+                className="flex items-center gap-2.5 font-bold text-sm text-white transition-all duration-200 hover:scale-105 active:scale-100"
                 style={{
-                  background: "linear-gradient(135deg, #E8003D 0%, #C0002E 100%)",
-                  boxShadow: "0 6px 20px rgba(232,0,61,0.45)",
+                  background: "linear-gradient(135deg, #E8003D 0%, #B5002E 100%)",
+                  boxShadow: "0 8px 24px rgba(232,0,61,0.50)",
+                  padding: "14px 28px",
+                  borderRadius: "14px",
                   letterSpacing: "0.02em",
+                  whiteSpace: "nowrap",
                 }}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
-                Search
+                Search Hotels
               </button>
             </div>
           </div>
         </motion.form>
 
-        {/* Trust badges */}
+        {/* ── Trust badges ───────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y:  0 }}
-          transition={{ duration: 0.7, delay: 0.58 }}
-          className="flex flex-wrap justify-center gap-5 md:gap-10 mt-8"
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.6 }}
+          className="flex flex-wrap justify-center gap-0 mt-7"
+          style={{
+            background: "rgba(0,0,0,0.28)",
+            borderRadius: "100px",
+            border: "1px solid rgba(255,255,255,0.10)",
+            backdropFilter: "blur(16px)",
+            padding: "10px 8px",
+          }}
         >
           {trustBadges.map((b, i) => (
-            <div key={i} className="flex items-center gap-2.5 text-white">
-              <span className="text-xl">{b.icon}</span>
+            <div
+              key={i}
+              className="flex items-center gap-2 px-4"
+              style={{
+                borderRight: i < trustBadges.length - 1 ? "1px solid rgba(255,255,255,0.12)" : "none",
+              }}
+            >
+              <span className="text-base leading-none">{b.icon}</span>
               <div className="text-left">
-                <div className="text-sm font-extrabold leading-none">{b.label}</div>
-                <div className="text-xs opacity-60 mt-0.5">{b.sub}</div>
+                <div className="text-xs font-extrabold text-white leading-none">{b.label}</div>
+                <div className="text-[10px] leading-none mt-0.5" style={{ color: "rgba(255,255,255,0.50)" }}>{b.sub}</div>
               </div>
             </div>
           ))}
         </motion.div>
 
-        {/* Scroll cue */}
+        {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.4 }}
-          className="absolute bottom-7 flex flex-col items-center gap-1.5"
+          transition={{ delay: 1.5 }}
+          className="absolute bottom-8 flex flex-col items-center gap-1"
         >
-          <span className="text-white/40 text-[11px] font-medium tracking-widest uppercase">Scroll</span>
-          <motion.div
-            animate={{ y: [0, 7, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+          <span
+            className="text-[10px] font-semibold uppercase tracking-[0.2em]"
+            style={{ color: "rgba(255,255,255,0.35)" }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2" className="w-5 h-5">
+            Scroll
+          </span>
+          <motion.div
+            animate={{ y: [0, 6, 0] }}
+            transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.30)" strokeWidth="1.5" className="w-5 h-5">
               <path d="M12 5v14M5 12l7 7 7-7"/>
             </svg>
           </motion.div>
