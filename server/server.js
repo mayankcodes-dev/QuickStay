@@ -27,7 +27,6 @@ import reviewRouter  from './routes/reviewRoutes.js';
 import adminRouter   from './routes/adminRoutes.js';
 import aiRouter      from './routes/aiRoutes.js';
 
-import Hotel from './models/Hotel.js';
 
 const app    = express();
 const server = createServer(app);  // ← HTTP server (needed for Socket.io)
