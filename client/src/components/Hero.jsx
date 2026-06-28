@@ -4,9 +4,16 @@ import { cities } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 
 const CLOUD = "dgqgzmzed";
+
+// ── Video sources (swap Cloudinary URLs once you upload your videos)
+// Replace the pexels URLs with your Cloudinary video after uploading
 const HERO_VIDEO     = "https://videos.pexels.com/video-files/3571264/3571264-uhd_2732_1440_25fps.mp4";
 const HERO_VIDEO_ALT = "https://videos.pexels.com/video-files/8547798/8547798-hd_1920_1080_25fps.mp4";
-const FALLBACK_POSTER = `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_1920/yoyo/rooms/goa_1`;
+
+// ── Static fallback (shown on mobile + while video loads on desktop)
+// Uses a wide hero hotel image — swap to your own poster after uploading
+const FALLBACK_POSTER = `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_1920,h_1080,c_fill,g_auto/yoyo/assets/hero_image`;
+
 
 const trustBadges = [
   { icon: "🏨", label: "10,000+", sub: "Hotels" },
@@ -95,9 +102,19 @@ const Hero = () => {
   return (
     <section className="relative w-full h-screen min-h-[640px] overflow-hidden -mt-16">
 
-      {/* ── Background video ──────────────────────────────── */}
+      {/* ── Background — Desktop: video / Mobile: static image ──── */}
+
+      {/* Mobile background (< md) — static Cloudinary image, no video */}
+      <div
+        className="md:hidden absolute inset-0 w-full h-full"
+        style={{
+          background: `url(${FALLBACK_POSTER}) center/cover no-repeat`,
+        }}
+      />
+
+      {/* Desktop background (≥ md) — autoplay video */}
       <video
-        className="absolute inset-0 w-full h-full object-cover scale-105"
+        className="hidden md:block absolute inset-0 w-full h-full object-cover scale-105"
         autoPlay muted loop playsInline
         poster={FALLBACK_POSTER}
       >
