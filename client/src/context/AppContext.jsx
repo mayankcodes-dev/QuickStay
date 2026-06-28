@@ -20,17 +20,15 @@ export const AppProvider = ({ children }) => {
   });
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || null);
 
-  const [isOwner,        setIsOwner]       = useState(() => {
-    try { return JSON.parse(localStorage.getItem(USER_KEY))?.role === 'hotelOwner'; } catch { return false; }
-  });
-  const [isAdmin,        setIsAdmin]       = useState(() => {
-    try { return JSON.parse(localStorage.getItem(USER_KEY))?.role === 'admin'; } catch { return false; }
-  });
-  const [showHotelReg,  setShowHotelReg]  = useState(false);
-  const [searchedCities,setSearchedCities]= useState([]);
-  const [rooms,         setRooms]         = useState([]);
-  const [roomsLoaded,   setRoomsLoaded]   = useState(false);   // true once fetch resolves
-  const [wishlist,      setWishlist]      = useState([]);
+  // Derived from user.role — no separate state needed
+  const isOwner = user?.role === 'hotelOwner';
+  const isAdmin = user?.role === 'admin';
+
+  const [showHotelReg,   setShowHotelReg]  = useState(false);
+  const [searchedCities, setSearchedCities] = useState([]);
+  const [rooms,          setRooms]         = useState([]);
+  const [roomsLoaded,    setRoomsLoaded]   = useState(false);
+  const [wishlist,       setWishlist]      = useState([]);
 
   // ── Axios auth header ───────────────────────────────────────
   useEffect(() => {
@@ -59,11 +57,8 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem(USER_KEY,  JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
-    setIsOwner(newUser.role === 'hotelOwner');
-    setIsAdmin(newUser.role === 'admin');
   };
 
-  // getToken — returns JWT from state (used by components that need auth headers)
   const getToken = useCallback(async () => token, [token]);
 
   const register = async (username, email, password) => {
@@ -90,8 +85,6 @@ export const AppProvider = ({ children }) => {
     localStorage.removeItem(USER_KEY);
     setToken(null);
     setUser(null);
-    setIsOwner(false);
-    setIsAdmin(false);
     setWishlist([]);
     delete axios.defaults.headers.common['Authorization'];
     navigate('/');
@@ -113,10 +106,10 @@ export const AppProvider = ({ children }) => {
     try {
       const { data } = await axios.get('/api/user');
       if (data.success) {
-        setIsOwner(data.role === 'hotelOwner');
-        setIsAdmin(data.role === 'admin');
         setSearchedCities(data.recentSearchedCities || []);
         setWishlist(data.wishlist?.map(id => id.toString()) || []);
+        // Keep local user role in sync (e.g. after hotel registration)
+        setUser(prev => prev ? { ...prev, role: data.role } : prev);
       }
     } catch { /* silent */ }
   }, [token]);
@@ -142,7 +135,7 @@ export const AppProvider = ({ children }) => {
       if (data.success) setRooms(data.rooms);
       else toast.error(data.message);
     } catch (err) { toast.error(err.message); }
-    finally { setRoomsLoaded(true); }   // always mark done, even on error
+    finally { setRoomsLoaded(true); }
   }, []);
 
   useEffect(() => { fetchRooms(); }, []);
@@ -150,8 +143,7 @@ export const AppProvider = ({ children }) => {
   const value = {
     currency, navigate,
     user, token, getToken, axios,
-    isOwner, setIsOwner,
-    isAdmin, setIsAdmin,
+    isOwner, isAdmin,
     login, logout, register, googleLogin,
     saveSession, updateUser,
     showHotelReg, setShowHotelReg,

@@ -1,5 +1,6 @@
 import Review  from '../models/Review.js';
 import Booking from '../models/Booking.js';
+import { ok, fail } from '../utils/respond.js';
 
 // ── POST /api/reviews  (protected user) ──────────────────────
 export const createReview = async (req, res) => {
@@ -14,30 +15,24 @@ export const createReview = async (req, res) => {
             status: { $in: ['confirmed', 'cancelled'] },
             checkOutDate: { $lte: new Date() },
         });
-        if (!booking)
-            return res.json({ success: false, message: 'You can only review hotels you have stayed at' });
+        if (!booking) return fail(res, 'You can only review hotels you have stayed at');
 
-        // Check for duplicate
-        const existing = await Review.findOne({ user: userId, hotel });
-        if (existing)
-            return res.json({ success: false, message: 'You have already reviewed this hotel' });
+        // Prevent duplicate
+        if (await Review.findOne({ user: userId, hotel }))
+            return fail(res, 'You have already reviewed this hotel');
 
-        const review = await Review.create({
-            user: userId, hotel, room, rating: +rating, comment,
-        });
-
+        const review = await Review.create({ user: userId, hotel, room, rating: +rating, comment });
         await review.populate('user', 'username image');
-        res.json({ success: true, review });
+        ok(res, { review });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
 // ── GET /api/reviews/hotel/:hotelId  (public) ─────────────────
 export const getHotelReviews = async (req, res) => {
     try {
-        const { hotelId } = req.params;
-        const reviews = await Review.find({ hotel: hotelId })
+        const reviews = await Review.find({ hotel: req.params.hotelId })
             .populate('user', 'username image')
             .sort({ createdAt: -1 });
 
@@ -50,47 +45,40 @@ export const getHotelReviews = async (req, res) => {
             count: reviews.filter(r => r.rating === star).length,
         }));
 
-        res.json({ success: true, reviews, avgRating, totalReviews: reviews.length, distribution });
+        ok(res, { reviews, avgRating, totalReviews: reviews.length, distribution });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
 // ── PATCH /api/reviews/:id/response  (protected hotelOwner) ──
 export const ownerResponse = async (req, res) => {
     try {
-        const { id }       = req.params;
-        const { response } = req.body;
-
         const review = await Review.findByIdAndUpdate(
-            id,
-            { ownerResponse: response, ownerResponseAt: new Date() },
+            req.params.id,
+            { ownerResponse: req.body.response, ownerResponseAt: new Date() },
             { new: true }
         ).populate('user', 'username image');
 
-        if (!review) return res.json({ success: false, message: 'Review not found' });
-        res.json({ success: true, review });
+        if (!review) return fail(res, 'Review not found', 404);
+        ok(res, { review });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
 // ── DELETE /api/reviews/:id  (protected admin or own review) ──
 export const deleteReview = async (req, res) => {
     try {
-        const { id } = req.params;
-        const review = await Review.findById(id);
-        if (!review) return res.json({ success: false, message: 'Review not found' });
+        const review = await Review.findById(req.params.id);
+        if (!review) return fail(res, 'Review not found', 404);
 
-        const isOwn   = review.user.toString() === req.user._id.toString();
-        const isAdmin = req.user.role === 'admin';
-
-        if (!isOwn && !isAdmin)
-            return res.json({ success: false, message: 'Unauthorized' });
+        const canDelete = review.user.toString() === req.user._id.toString() || req.user.role === 'admin';
+        if (!canDelete) return fail(res, 'Unauthorized', 403);
 
         await review.deleteOne();
-        res.json({ success: true, message: 'Review deleted' });
+        ok(res, { message: 'Review deleted' });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };

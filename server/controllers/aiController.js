@@ -10,13 +10,12 @@
 import Groq    from 'groq-sdk';
 import Booking from '../models/Booking.js';
 import Review  from '../models/Review.js';
+import { ok, fail } from '../utils/respond.js';
 
 // Lazy-init: only throws if GROQ_API_KEY is missing at call-time, not module-load time
 let _groq = null;
 const getGroq = () => {
-    if (!process.env.GROQ_API_KEY) {
-        throw new Error('GROQ_API_KEY is not configured. Add it to server/.env');
-    }
+    if (!process.env.GROQ_API_KEY) throw new Error('GROQ_API_KEY is not configured. Add it to server/.env');
     if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     return _groq;
 };
@@ -53,15 +52,15 @@ guide the user to the relevant section of the app.
 Respond in English by default. If user writes in Hindi, respond in simple Hinglish.`;
 
 // ── Quick reply chips by context ──────────────────────────────────
-const getQuickReplies = (messageText) => {
-    const msg = messageText.toLowerCase();
-    if (msg.includes('cancel') || msg.includes('refund'))
+const getQuickReplies = (msg) => {
+    const m = msg.toLowerCase();
+    if (m.includes('cancel') || m.includes('refund'))
         return ['How do I cancel?', 'Refund timeline?', 'No-show policy'];
-    if (msg.includes('book') || msg.includes('room'))
+    if (m.includes('book') || m.includes('room'))
         return ['How to book a room?', 'Best hotels in Goa', 'Check my booking'];
-    if (msg.includes('payment') || msg.includes('pay'))
+    if (m.includes('payment') || m.includes('pay'))
         return ['Payment methods?', 'Apply coupon', 'Invoice/receipt'];
-    if (msg.includes('check') || msg.includes('in') || msg.includes('out'))
+    if (m.includes('check') || m.includes('in') || m.includes('out'))
         return ['Check-in time?', 'Early check-in?', 'Late check-out?'];
     return ['Track my booking', 'Cancellation policy', 'Best deals today', 'Contact support'];
 };
@@ -70,7 +69,7 @@ const getQuickReplies = (messageText) => {
 export const aiChat = async (req, res) => {
     try {
         const { message, history = [], userId } = req.body;
-        if (!message?.trim()) return res.json({ success: false, message: 'Message is required' });
+        if (!message?.trim()) return fail(res, 'Message is required');
 
         const messages = [
             { role: 'system', content: MAYA_SYSTEM_PROMPT },
@@ -81,14 +80,11 @@ export const aiChat = async (req, res) => {
             { role: 'user', content: message.trim() },
         ];
 
-        // Personalize with user's last booking
+        // Personalize with user's last booking (best-effort, silent on failure)
         if (userId) {
             try {
-                const recentBooking = await Booking.findOne({ user: userId })
-                    .sort({ createdAt: -1 }).populate('room hotel').lean();
-                if (recentBooking) {
-                    messages[0].content += `\n[Context: User's last booking: ${recentBooking._id}, ${recentBooking.room?.roomType} at ${recentBooking.hotel?.name}, status: ${recentBooking.status}]`;
-                }
+                const b = await Booking.findOne({ user: userId }).sort({ createdAt: -1 }).populate('room hotel').lean();
+                if (b) messages[0].content += `\n[Context: User's last booking: ${b._id}, ${b.room?.roomType} at ${b.hotel?.name}, status: ${b.status}]`;
             } catch (_) {}
         }
 
@@ -99,15 +95,12 @@ export const aiChat = async (req, res) => {
             temperature: 0.7,
         });
 
-        const reply = completion.choices[0]?.message?.content?.trim()
-            || "I'm having a moment — please try again!";
-
-        res.json({ success: true, reply, quickReplies: getQuickReplies(message) });
+        const reply = completion.choices[0]?.message?.content?.trim() || "I'm having a moment — please try again!";
+        ok(res, { reply, quickReplies: getQuickReplies(message) });
 
     } catch (error) {
         console.error('[AI] chat error:', error.message);
-        res.json({
-            success: true,
+        ok(res, {
             reply: "I'm temporarily unavailable. For urgent help, email support@yoyorooms.com",
             quickReplies: ['Email support', 'View my bookings', 'Cancellation policy'],
         });
@@ -115,12 +108,10 @@ export const aiChat = async (req, res) => {
 };
 
 // ── POST /api/ai/parse-search ─────────────────────────────────────
-// NLP: converts plain English query to structured hotel filter params
-// Called from AllRooms when user types in the NLP search bar
 export const parseSearch = async (req, res) => {
     try {
         const { query } = req.body;
-        if (!query?.trim()) return res.json({ success: false, message: 'Query required' });
+        if (!query?.trim()) return fail(res, 'Query required');
 
         const prompt = `You are a search parser for an Indian hotel booking app.
 Extract structured filter params from this user query: "${query}"
@@ -148,15 +139,14 @@ Rules:
             temperature: 0.1,
         });
 
-        const raw = completion.choices[0]?.message?.content?.trim() || '{}';
+        const raw       = completion.choices[0]?.message?.content?.trim() || '{}';
         const jsonMatch = raw.match(/\{[\s\S]*\}/);
-        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+        const filters   = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
 
-        res.json({ success: true, filters: parsed });
-
+        ok(res, { filters });
     } catch (error) {
         console.error('[AI] parse-search error:', error.message);
-        res.json({ success: false, message: 'Could not parse query', filters: {} });
+        fail(res, 'Could not parse query');
     }
 };
 
@@ -165,38 +155,23 @@ const summaryCache = new Map();
 const CACHE_TTL    = 12 * 60 * 60 * 1000;
 
 // ── GET /api/ai/review-summary/:hotelId ──────────────────────────
-// Fetches latest 30 reviews, generates AI summary, caches result
 export const reviewSummary = async (req, res) => {
     try {
         const { hotelId } = req.params;
-        if (!hotelId) return res.json({ success: false, message: 'Hotel ID required' });
+        if (!hotelId) return fail(res, 'Hotel ID required');
 
-        // Serve from cache if fresh
         const cached = summaryCache.get(hotelId);
-        if (cached && Date.now() - cached.cachedAt < CACHE_TTL) {
-            return res.json({ success: true, summary: cached.summary, fromCache: true });
-        }
+        if (cached && Date.now() - cached.cachedAt < CACHE_TTL)
+            return ok(res, { summary: cached.summary, fromCache: true });
 
-        const reviews = await Review.find({ hotel: hotelId })
-            .sort({ createdAt: -1 }).limit(30).lean();
+        const reviews = await Review.find({ hotel: hotelId }).sort({ createdAt: -1 }).limit(30).lean();
+        if (reviews.length < 3) return fail(res, 'Not enough reviews to summarize');
 
-        if (reviews.length < 3)
-            return res.json({ success: false, message: 'Not enough reviews to summarize' });
-
-        const reviewText = reviews
-            .map(r => `Rating: ${r.rating}/5 - "${r.comment}"`)
-            .join('\n');
-
-        const prompt = `Summarize these hotel reviews in 2-3 concise sentences.
-Mention what guests love most, any common complaint, and overall sentiment.
-Be specific, not generic. Flowing prose only, no bullet points.
-
-Reviews:
-${reviewText}`;
+        const reviewText = reviews.map(r => `Rating: ${r.rating}/5 - "${r.comment}"`).join('\n');
 
         const completion = await getGroq().chat.completions.create({
             model: 'llama3-8b-8192',
-            messages: [{ role: 'user', content: prompt }],
+            messages: [{ role: 'user', content: `Summarize these hotel reviews in 2-3 concise sentences.\nMention what guests love most, any common complaint, and overall sentiment.\nBe specific, not generic. Flowing prose only, no bullet points.\n\nReviews:\n${reviewText}` }],
             max_tokens: 150,
             temperature: 0.4,
         });
@@ -205,11 +180,10 @@ ${reviewText}`;
             || 'Guests have had a great experience at this property.';
 
         summaryCache.set(hotelId, { summary, cachedAt: Date.now() });
-
-        res.json({ success: true, summary, reviewCount: reviews.length });
+        ok(res, { summary, reviewCount: reviews.length });
 
     } catch (error) {
         console.error('[AI] review-summary error:', error.message);
-        res.json({ success: false, message: 'Could not generate summary' });
+        fail(res, 'Could not generate summary');
     }
 };

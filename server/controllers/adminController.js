@@ -3,13 +3,13 @@ import Hotel   from '../models/Hotel.js';
 import Room    from '../models/Room.js';
 import Booking from '../models/Booking.js';
 import Review  from '../models/Review.js';
+import { ok, fail } from '../utils/respond.js';
 
-const requireAdmin = (req, res, next) => {
+export const requireAdmin = (req, res, next) => {
     if (req.user?.role !== 'admin')
         return res.status(403).json({ success: false, message: 'Admin access required' });
     next();
 };
-export { requireAdmin };
 
 // ── GET /api/admin/stats ──────────────────────────────────────
 export const getStats = async (req, res) => {
@@ -25,15 +25,9 @@ export const getStats = async (req, res) => {
             { $match: { isPaid: true } },
             { $group: { _id: null, total: { $sum: '$totalPrice' } } },
         ]);
-        res.json({
-            success: true,
-            stats: {
-                users, hotels, rooms, bookings, reviews,
-                totalRevenue: revenue[0]?.total || 0,
-            },
-        });
+        ok(res, { stats: { users, hotels, rooms, bookings, reviews, totalRevenue: revenue[0]?.total || 0 } });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -41,9 +35,9 @@ export const getStats = async (req, res) => {
 export const getUsers = async (req, res) => {
     try {
         const users = await User.find().select('-password').sort({ createdAt: -1 });
-        res.json({ success: true, users });
+        ok(res, { users });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -52,14 +46,13 @@ export const updateUserRole = async (req, res) => {
     try {
         const { id }   = req.params;
         const { role } = req.body;
-        if (!['user', 'hotelOwner', 'admin'].includes(role))
-            return res.json({ success: false, message: 'Invalid role' });
+        if (!['user', 'hotelOwner', 'admin'].includes(role)) return fail(res, 'Invalid role');
 
         const user = await User.findByIdAndUpdate(id, { role }, { new: true }).select('-password');
-        if (!user) return res.json({ success: false, message: 'User not found' });
-        res.json({ success: true, user });
+        if (!user) return fail(res, 'User not found', 404);
+        ok(res, { user });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -67,9 +60,9 @@ export const updateUserRole = async (req, res) => {
 export const getHotels = async (req, res) => {
     try {
         const hotels = await Hotel.find().sort({ createdAt: -1 });
-        res.json({ success: true, hotels });
+        ok(res, { hotels });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -77,9 +70,9 @@ export const getHotels = async (req, res) => {
 export const getAllBookings = async (req, res) => {
     try {
         const bookings = await Booking.find().populate('room hotel').sort({ createdAt: -1 }).limit(200);
-        res.json({ success: true, bookings });
+        ok(res, { bookings });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -90,9 +83,9 @@ export const getReviews = async (req, res) => {
             .populate('user', 'username email')
             .populate('hotel', 'name city')
             .sort({ createdAt: -1 });
-        res.json({ success: true, reviews });
+        ok(res, { reviews });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -100,8 +93,8 @@ export const getReviews = async (req, res) => {
 export const adminDeleteReview = async (req, res) => {
     try {
         await Review.findByIdAndDelete(req.params.id);
-        res.json({ success: true, message: 'Review deleted' });
+        ok(res, { message: 'Review deleted' });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };

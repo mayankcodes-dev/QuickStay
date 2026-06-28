@@ -55,38 +55,32 @@ app.locals.io = io;
 // EVENT BUS LISTENERS — decoupled side effects
 // ═══════════════════════════════════════════════════════════════
 
-// When a booking is created:
-// 1. Notify the hotel owner in real-time
-// 2. Broadcast availability update to room watchers
-bookingBus.on('booking:created', async ({ booking, roomId, ownerId }) => {
+// ── Named event handlers (easier to read/test) ───────────────
+const onBookingCreated = async ({ booking, roomId, ownerId }) => {
     try {
-        // Notify hotel owner dashboard
         notifyOwner(io, ownerId, {
             booking,
             message: `🏨 New booking! ${booking.guests} guest(s), ${new Date(booking.checkInDate).toLocaleDateString('en-IN')}`,
         });
-
-        // Tell everyone watching this room page that availability changed
         broadcastAvailability(io, roomId, false);
-
         console.log(`[Event] booking:created → owner ${ownerId} notified, room ${roomId} availability broadcast`);
     } catch (err) {
         console.error('[Event] booking:created handler error:', err.message);
     }
-});
+};
 
-// When a booking is cancelled:
-// Broadcast that room is available again
-bookingBus.on('booking:cancelled', async ({ roomId }) => {
+const onBookingCancelled = ({ roomId }) => {
     if (roomId) broadcastAvailability(io, roomId, true);
     console.log(`[Event] booking:cancelled → room ${roomId} now available`);
-});
+};
 
-// When booking status is changed by owner:
-// Could extend to notify guest here too
-bookingBus.on('booking:statusChanged', async ({ booking, newStatus }) => {
+const onBookingStatusChanged = ({ booking, newStatus }) => {
     console.log(`[Event] booking:statusChanged → booking ${booking._id} is now ${newStatus}`);
-});
+};
+
+bookingBus.on('booking:created',       onBookingCreated);
+bookingBus.on('booking:cancelled',     onBookingCancelled);
+bookingBus.on('booking:statusChanged', onBookingStatusChanged);
 
 connectCloudinary();
 

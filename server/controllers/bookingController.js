@@ -6,6 +6,7 @@ import Razorpay     from 'razorpay';
 import stripe       from 'stripe';
 import crypto       from 'crypto';
 import { bookingBus } from '../events/bookingEvents.js';
+import { ok, fail } from '../utils/respond.js';
 
 // ─── Coupons ──────────────────────────────────────────────────
 const COUPONS = {
@@ -15,10 +16,11 @@ const COUPONS = {
     FLAT500:   { type: 'flat',    value: 500 },
 };
 
-// ─── Helpers ──────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────
 const TAX_RATE    = 0.12; // 12% GST
 const SERVICE_FEE = 99;   // ₹99 flat
 
+// ─── Helpers ─────────────────────────────────────────────────
 const calcBreakdown = (pricePerNight, nights, couponCode = '') => {
     const base     = pricePerNight * nights;
     const coupon   = COUPONS[couponCode?.toUpperCase()];
@@ -27,11 +29,14 @@ const calcBreakdown = (pricePerNight, nights, couponCode = '') => {
             ? Math.round(base * coupon.value / 100)
             : Math.min(coupon.value, base)
         : 0;
-    const subtotal    = base - discount;
-    const taxAmount   = Math.round(subtotal * TAX_RATE);
-    const grandTotal  = subtotal + taxAmount + SERVICE_FEE;
+    const subtotal   = base - discount;
+    const taxAmount  = Math.round(subtotal * TAX_RATE);
+    const grandTotal = subtotal + taxAmount + SERVICE_FEE;
     return { base, discount, taxAmount, serviceFee: SERVICE_FEE, grandTotal };
 };
+
+// Reusable grand-total calc from a saved booking document
+const calcGrandTotal = (b) => b.totalPrice + b.taxAmount + b.serviceFee - b.discountAmount;
 
 const checkAvailability = async ({ checkInDate, checkOutDate, room }) => {
     try {
@@ -72,7 +77,7 @@ const sendBookingEmail = async (toEmail, username, roomData, booking) => {
           <tr><td style="padding:8px 0;color:#8888aa">Check-Out</td><td style="padding:8px 0;color:#0d0d1a;text-align:right">${new Date(booking.checkOutDate).toDateString()}</td></tr>
           <tr><td style="padding:8px 0;color:#8888aa">Guests</td><td style="padding:8px 0;color:#0d0d1a;text-align:right">${booking.guests}</td></tr>
           <tr><td style="padding:8px 0;color:#8888aa">Nights</td><td style="padding:8px 0;color:#0d0d1a;text-align:right">${nights}</td></tr>
-          <tr style="border-top:1px solid #ededf7"><td style="padding:12px 0 8px;color:#0d0d1a;font-weight:700">Total Paid</td><td style="padding:12px 0 8px;color:#E8003D;font-weight:700;text-align:right">₹${(booking.totalPrice + booking.taxAmount + booking.serviceFee - booking.discountAmount).toLocaleString('en-IN')}</td></tr>
+          <tr style="border-top:1px solid #ededf7"><td style="padding:12px 0 8px;color:#0d0d1a;font-weight:700">Total Paid</td><td style="padding:12px 0 8px;color:#E8003D;font-weight:700;text-align:right">₹${calcGrandTotal(booking).toLocaleString('en-IN')}</td></tr>
         </table>
       </div>
       <div style="background:#E8003D;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;margin-bottom:24px">
@@ -101,9 +106,9 @@ export const checkAvailibilityAPI = async (req, res) => {
     try {
         const { room, checkInDate, checkOutDate } = req.body;
         const isAvailable = await checkAvailability({ room, checkInDate, checkOutDate });
-        res.json({ success: true, isAvailable });
+        ok(res, { isAvailable });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -114,21 +119,20 @@ export const validateCoupon = async (req, res) => {
     try {
         const { code, totalPrice } = req.body;
         const coupon = COUPONS[code?.toUpperCase()];
-        if (!coupon) return res.json({ success: false, message: 'Invalid coupon code' });
+        if (!coupon) return fail(res, 'Invalid coupon code');
 
         const discount = coupon.type === 'percent'
             ? Math.round(totalPrice * coupon.value / 100)
             : Math.min(coupon.value, totalPrice);
 
-        res.json({
-            success: true,
+        ok(res, {
             discount,
             message: coupon.type === 'percent'
                 ? `${coupon.value}% off applied!`
                 : `₹${coupon.value} off applied!`,
         });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -141,11 +145,10 @@ export const createBooking = async (req, res) => {
         const userId = req.user._id.toString();
 
         const isAvailable = await checkAvailability({ room, checkInDate, checkOutDate });
-        if (!isAvailable)
-            return res.json({ success: false, message: 'Room is not available for the selected dates' });
+        if (!isAvailable) return fail(res, 'Room is not available for the selected dates');
 
         const roomData = await Room.findById(room).populate('hotel');
-        if (!roomData) return res.json({ success: false, message: 'Room not found' });
+        if (!roomData) return fail(res, 'Room not found', 404);
 
         const nights = Math.ceil(
             (new Date(checkOutDate) - new Date(checkInDate)) / 86400000
@@ -172,22 +175,16 @@ export const createBooking = async (req, res) => {
         // Non-blocking: send confirmation email
         sendBookingEmail(req.user.email, req.user.username, roomData, booking);
 
-        // ── Event Bus: emit booking:created ──────────────────────
-        // Listeners handle: owner socket notification + room availability broadcast
+        // Event Bus: notify owner + broadcast availability
         bookingBus.emit('booking:created', {
             booking,
             roomId:  room,
             ownerId: roomData.hotel.owner?.toString(),
         });
 
-        res.json({
-            success: true,
-            message: 'Booking created successfully',
-            booking,
-            breakdown: { base, discount, taxAmount, serviceFee, grandTotal },
-        });
+        ok(res, { message: 'Booking created successfully', booking, breakdown: { base, discount, taxAmount, serviceFee, grandTotal } });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -196,13 +193,12 @@ export const createBooking = async (req, res) => {
 // ──────────────────────────────────────────────────────────────
 export const getUserBookings = async (req, res) => {
     try {
-        const userId   = req.user._id.toString();
-        const bookings = await Booking.find({ user: userId })
+        const bookings = await Booking.find({ user: req.user._id.toString() })
             .populate('room hotel')
             .sort({ createdAt: -1 });
-        res.json({ success: true, bookings });
+        ok(res, { bookings });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -212,16 +208,15 @@ export const getUserBookings = async (req, res) => {
 export const getHotelBookings = async (req, res) => {
     try {
         const hotel = await Hotel.findOne({ owner: req.user._id.toString() });
-        if (!hotel) return res.json({ success: false, message: 'No hotel found for this owner' });
+        if (!hotel) return fail(res, 'No hotel found for this owner', 404);
 
         const bookings = await Booking.find({ hotel: hotel._id })
             .populate('room hotel')
             .sort({ createdAt: -1 });
 
-        const totalBookings = bookings.length;
-        const totalRevenue  = bookings
+        const totalRevenue = bookings
             .filter(b => b.isPaid)
-            .reduce((sum, b) => sum + b.totalPrice + b.taxAmount + b.serviceFee - b.discountAmount, 0);
+            .reduce((sum, b) => sum + calcGrandTotal(b), 0);
 
         // Build daily revenue for last 30 days
         const today = new Date();
@@ -234,16 +229,12 @@ export const getHotelBookings = async (req, res) => {
             const key = new Date(b.createdAt).toISOString().split('T')[0];
             if (key in daily) daily[key] += b.totalPrice;
         });
-        const revenueData = Object.entries(daily).map(([date, revenue]) => ({ date, revenue }));
+        const revenueData    = Object.entries(daily).map(([date, revenue]) => ({ date, revenue }));
+        const occupancyRate  = Math.round((bookings.filter(b => b.status === 'confirmed').length / Math.max(bookings.length, 1)) * 100);
 
-        const occupancyRate = Math.round((bookings.filter(b => b.status === 'confirmed').length / Math.max(bookings.length, 1)) * 100);
-
-        res.json({
-            success: true,
-            dashboardData: { bookings, totalBookings, totalRevenue, revenueData, occupancyRate },
-        });
+        ok(res, { dashboardData: { bookings, totalBookings: bookings.length, totalRevenue, revenueData, occupancyRate } });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -253,35 +244,28 @@ export const getHotelBookings = async (req, res) => {
 export const cancelBooking = async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.user._id.toString();
+        const booking = await Booking.findOne({ _id: id, user: req.user._id.toString() });
+        if (!booking) return fail(res, 'Booking not found', 404);
+        if (booking.status === 'cancelled') return fail(res, 'Booking already cancelled');
 
-        const booking = await Booking.findOne({ _id: id, user: userId });
-        if (!booking) return res.json({ success: false, message: 'Booking not found' });
-        if (booking.status === 'cancelled')
-            return res.json({ success: false, message: 'Booking already cancelled' });
-
-        // Check 48h rule
         const hoursUntilCheckIn = (new Date(booking.checkInDate) - Date.now()) / 3600000;
-        const refundEligible = hoursUntilCheckIn >= 48;
+        const refundEligible    = hoursUntilCheckIn >= 48;
 
         booking.status       = 'cancelled';
         booking.cancelledAt  = new Date();
         booking.refundStatus = booking.isPaid && refundEligible ? 'pending' : 'none';
         await booking.save();
 
-        res.json({
-            success: true,
+        ok(res, {
             message: refundEligible
                 ? 'Booking cancelled. Refund will be processed in 5-7 business days.'
                 : 'Booking cancelled. No refund (within 48h of check-in).',
             refundEligible,
         });
 
-        // ── Event Bus: emit booking:cancelled ──────────────────────
         bookingBus.emit('booking:cancelled', { booking, roomId: booking.room?.toString() });
-
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -294,21 +278,21 @@ export const updateBookingStatus = async (req, res) => {
         const { status } = req.body;
 
         if (!['pending', 'confirmed', 'cancelled'].includes(status))
-            return res.json({ success: false, message: 'Invalid status' });
+            return fail(res, 'Invalid status');
 
         const hotel = await Hotel.findOne({ owner: req.user._id.toString() });
-        if (!hotel) return res.json({ success: false, message: 'Hotel not found' });
+        if (!hotel) return fail(res, 'Hotel not found', 404);
 
         const booking = await Booking.findOneAndUpdate(
             { _id: id, hotel: hotel._id },
             { status },
             { new: true }
         );
-        if (!booking) return res.json({ success: false, message: 'Booking not found' });
+        if (!booking) return fail(res, 'Booking not found', 404);
 
-        res.json({ success: true, message: `Booking ${status}`, booking });
+        ok(res, { message: `Booking ${status}`, booking });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -323,14 +307,12 @@ export const stripePayment = async (req, res) => {
         const { origin } = req.headers;
 
         const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
-        const grandTotal     = booking.totalPrice + booking.taxAmount + booking.serviceFee - booking.discountAmount;
-
         const session = await stripeInstance.checkout.sessions.create({
             line_items: [{
                 price_data: {
                     currency: 'inr',
                     product_data: { name: `${roomData.hotel.name} — ${roomData.roomType}` },
-                    unit_amount: grandTotal * 100, // paisa
+                    unit_amount: calcGrandTotal(booking) * 100, // paisa
                 },
                 quantity: 1,
             }],
@@ -340,9 +322,9 @@ export const stripePayment = async (req, res) => {
             metadata: { bookingId: bookingId.toString() },
         });
 
-        res.json({ success: true, url: session.url });
+        ok(res, { url: session.url });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -352,7 +334,7 @@ export const stripePayment = async (req, res) => {
 export const verifyStripePayment = async (req, res) => {
     try {
         const { bookingId } = req.body;
-        if (!bookingId) return res.json({ success: false, message: 'Booking ID required' });
+        if (!bookingId) return fail(res, 'Booking ID required');
 
         const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
         const sessions = await stripeInstance.checkout.sessions.list({ limit: 100 });
@@ -360,11 +342,11 @@ export const verifyStripePayment = async (req, res) => {
 
         if (session && session.payment_status === 'paid') {
             await Booking.findByIdAndUpdate(bookingId, { isPaid: true, paymentMethod: 'stripe', status: 'confirmed' });
-            return res.json({ success: true, message: 'Payment verified' });
+            return ok(res, { message: 'Payment verified' });
         }
-        res.json({ success: false, message: 'Payment not completed' });
+        fail(res, 'Payment not completed');
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -375,9 +357,7 @@ export const createRazorpayOrder = async (req, res) => {
     try {
         const { bookingId } = req.body;
         const booking = await Booking.findById(bookingId);
-        if (!booking) return res.json({ success: false, message: 'Booking not found' });
-
-        const grandTotal = booking.totalPrice + booking.taxAmount + booking.serviceFee - booking.discountAmount;
+        if (!booking) return fail(res, 'Booking not found', 404);
 
         const razorpay = new Razorpay({
             key_id:     process.env.RAZORPAY_KEY_ID     || 'rzp_test_placeholder',
@@ -385,24 +365,22 @@ export const createRazorpayOrder = async (req, res) => {
         });
 
         const order = await razorpay.orders.create({
-            amount:   grandTotal * 100, // paise
+            amount:   calcGrandTotal(booking) * 100, // paise
             currency: 'INR',
             receipt:  `booking_${bookingId}`,
         });
 
-        // Save order ID
         booking.razorpayOrderId = order.id;
         await booking.save();
 
-        res.json({
-            success: true,
+        ok(res, {
             orderId:  order.id,
             amount:   order.amount,
             currency: order.currency,
             keyId:    process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
         });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -413,25 +391,23 @@ export const verifyRazorpayPayment = async (req, res) => {
     try {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } = req.body;
 
-        const body      = `${razorpay_order_id}|${razorpay_payment_id}`;
-        const expected  = crypto
+        const expected = crypto
             .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'placeholder')
-            .update(body)
+            .update(`${razorpay_order_id}|${razorpay_payment_id}`)
             .digest('hex');
 
-        if (expected !== razorpay_signature)
-            return res.json({ success: false, message: 'Payment signature verification failed' });
+        if (expected !== razorpay_signature) return fail(res, 'Payment signature verification failed');
 
         await Booking.findByIdAndUpdate(bookingId, {
-            isPaid:           true,
-            paymentMethod:    'razorpay',
-            status:           'confirmed',
-            razorpayOrderId:  razorpay_order_id,
-            razorpayPaymentId:razorpay_payment_id,
+            isPaid:            true,
+            paymentMethod:     'razorpay',
+            status:            'confirmed',
+            razorpayOrderId:   razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
         });
 
-        res.json({ success: true, message: 'Razorpay payment verified' });
+        ok(res, { message: 'Razorpay payment verified' });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };

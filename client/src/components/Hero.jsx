@@ -37,6 +37,27 @@ const SearchField = ({ label, icon, borderRight = true, children }) => (
   </div>
 );
 
+// ── Guests stepper (reuses SearchField wrapper)
+const GuestsField = ({ guests, setGuests }) => (
+  <SearchField label="Guests" icon="👤" borderRight>
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setGuests(g => Math.max(1, g - 1))}
+        className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition hover:bg-gray-100"
+        style={{ color: "#E8003D", border: "1px solid rgba(232,0,61,0.3)" }}
+      >−</button>
+      <span className="text-sm font-bold text-gray-800 w-4 text-center">{guests}</span>
+      <button
+        type="button"
+        onClick={() => setGuests(g => Math.min(10, g + 1))}
+        className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition hover:bg-gray-100"
+        style={{ color: "#E8003D", border: "1px solid rgba(232,0,61,0.3)" }}
+      >+</button>
+    </div>
+  </SearchField>
+);
+
 const Hero = () => {
   const { navigate, getToken, axios, setSearchedCities } = useAppContext();
   const [destination, setDestination] = useState("");
@@ -225,32 +246,7 @@ const Hero = () => {
             </SearchField>
 
             {/* Guests */}
-            <div
-              className="flex flex-col px-5 py-4"
-              style={{ borderRight: "1px solid rgba(0,0,0,0.07)", minWidth: "100px" }}
-            >
-              <label
-                className="text-[10px] font-black uppercase tracking-widest mb-1"
-                style={{ color: "#E8003D" }}
-              >
-                👤 Guests
-              </label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setGuests(g => Math.max(1, g - 1))}
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition hover:bg-gray-100"
-                  style={{ color: "#E8003D", border: "1px solid rgba(232,0,61,0.3)" }}
-                >−</button>
-                <span className="text-sm font-bold text-gray-800 w-4 text-center">{guests}</span>
-                <button
-                  type="button"
-                  onClick={() => setGuests(g => Math.min(10, g + 1))}
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition hover:bg-gray-100"
-                  style={{ color: "#E8003D", border: "1px solid rgba(232,0,61,0.3)" }}
-                >+</button>
-              </div>
-            </div>
+            <GuestsField guests={guests} setGuests={setGuests} />
 
             {/* Search CTA */}
             <div className="flex items-center p-3">

@@ -1,37 +1,35 @@
 import Hotel     from '../models/Hotel.js';
 import User      from '../models/User.js';
 import cloudinary from '../configs/cloudinary.js';
+import { ok, fail } from '../utils/respond.js';
 
 // ── POST /api/hotels/  (protected) ───────────────────────────
 export const registerHotel = async (req, res) => {
     try {
         const { name, address, contact, city } = req.body;
-        if (!req.user) return res.json({ success: false, message: 'Authentication required' });
-
         const owner = req.user._id.toString();
-        const existing = await Hotel.findOne({ owner });
-        if (existing) return res.json({ success: false, message: 'Hotel already registered' });
+
+        if (await Hotel.findOne({ owner })) return fail(res, 'Hotel already registered');
 
         await Hotel.create({ name, address, contact, city, owner });
         await User.findByIdAndUpdate(owner, { role: 'hotelOwner' });
 
-        res.json({ success: true, message: 'Hotel registered successfully' });
+        ok(res, { message: 'Hotel registered successfully' });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
 // ── PATCH /api/hotels/  (protected hotelOwner) ───────────────
 export const updateHotel = async (req, res) => {
     try {
-        const owner = req.user._id.toString();
+        const owner   = req.user._id.toString();
         const { name, address, contact, city, description } = req.body;
-        const updates = {};
-        if (name)        updates.name        = name;
-        if (address)     updates.address     = address;
-        if (contact)     updates.contact     = contact;
-        if (city)        updates.city        = city;
-        if (description) updates.description = description;
+
+        // Build update object from only provided fields
+        const updates = Object.fromEntries(
+            Object.entries({ name, address, contact, city, description }).filter(([, v]) => v != null && v !== '')
+        );
 
         // Handle image upload
         if (req.file) {
@@ -46,11 +44,11 @@ export const updateHotel = async (req, res) => {
         }
 
         const hotel = await Hotel.findOneAndUpdate({ owner }, updates, { new: true });
-        if (!hotel) return res.json({ success: false, message: 'Hotel not found' });
+        if (!hotel) return fail(res, 'Hotel not found', 404);
 
-        res.json({ success: true, message: 'Hotel updated', hotel });
+        ok(res, { message: 'Hotel updated', hotel });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
 
@@ -58,9 +56,9 @@ export const updateHotel = async (req, res) => {
 export const getOwnerHotel = async (req, res) => {
     try {
         const hotel = await Hotel.findOne({ owner: req.user._id.toString() });
-        if (!hotel) return res.json({ success: false, message: 'No hotel registered' });
-        res.json({ success: true, hotel });
+        if (!hotel) return fail(res, 'No hotel registered', 404);
+        ok(res, { hotel });
     } catch (error) {
-        res.json({ success: false, message: error.message });
+        fail(res, error.message);
     }
 };
