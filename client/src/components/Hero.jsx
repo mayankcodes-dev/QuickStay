@@ -5,10 +5,9 @@ import { useAppContext } from "../context/AppContext";
 
 const CLOUD = "dgqgzmzed";
 
-// ── Video sources (swap Cloudinary URLs once you upload your videos)
-// Replace the pexels URLs with your Cloudinary video after uploading
-const HERO_VIDEO     = "https://videos.pexels.com/video-files/3571264/3571264-uhd_2732_1440_25fps.mp4";
-const HERO_VIDEO_ALT = "https://videos.pexels.com/video-files/8547798/8547798-hd_1920_1080_25fps.mp4";
+// ── Video sources
+const HERO_VIDEO     = "https://res.cloudinary.com/dgqgzmzed/video/upload/v1782646940/hero_video_ilofmd.mp4";
+const HERO_VIDEO_ALT = "https://res.cloudinary.com/dgqgzmzed/video/upload/v1782646953/hero_video_alt_bjksts.mp4";
 
 // ── Static fallback (shown on mobile + while video loads on desktop)
 // Uses a wide hero hotel image — swap to your own poster after uploading
