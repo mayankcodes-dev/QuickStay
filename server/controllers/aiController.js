@@ -36,7 +36,7 @@ Key facts about YoYo Rooms:
 - Available across 200+ cities in India
 - Price range: Rs 500 to Rs 10,000 per night
 - Free cancellation up to 48 hours before check-in
-- Payment: Pay at Hotel, Razorpay (UPI/cards), Stripe
+- Payment: Pay at Hotel or Stripe (cards/international)
 - Check-in time: 12:00 PM | Check-out time: 11:00 AM
 - Coupon codes: YOYO10 (10% off), YOYO20 (20% off), WELCOME50 (Rs 50 off first booking)
 - GST of 12% + Rs 99 service fee added to all bookings

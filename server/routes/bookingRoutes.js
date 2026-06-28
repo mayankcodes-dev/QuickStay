@@ -9,8 +9,6 @@ import {
     updateBookingStatus,
     stripePayment,
     verifyStripePayment,
-    createRazorpayOrder,
-    verifyRazorpayPayment,
     validateCoupon,
 } from '../controllers/bookingController.js';
 
@@ -27,10 +25,8 @@ bookingRouter.get('/hotel',                protect, getHotelBookings);
 bookingRouter.patch('/:id/cancel',         protect, cancelBooking);
 bookingRouter.patch('/:id/status',         protect, updateBookingStatus);
 
-// Payments
+// Payments — Stripe only
 bookingRouter.post('/stripe-payment',      protect, stripePayment);
 bookingRouter.post('/verify-payment',      protect, verifyStripePayment);
-bookingRouter.post('/razorpay-order',      protect, createRazorpayOrder);
-bookingRouter.post('/verify-razorpay',     protect, verifyRazorpayPayment);
 
 export default bookingRouter;

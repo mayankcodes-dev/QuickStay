@@ -2,7 +2,7 @@ import transporter  from '../configs/nodemailer.js';
 import Booking      from '../models/Booking.js';
 import Hotel        from '../models/Hotel.js';
 import Room         from '../models/Room.js';
-import Razorpay     from 'razorpay';
+
 import stripe       from 'stripe';
 import crypto       from 'crypto';
 import { bookingBus } from '../events/bookingEvents.js';
@@ -345,68 +345,6 @@ export const verifyStripePayment = async (req, res) => {
             return ok(res, { message: 'Payment verified' });
         }
         fail(res, 'Payment not completed');
-    } catch (error) {
-        fail(res, error.message);
-    }
-};
-
-// ──────────────────────────────────────────────────────────────
-// PROTECTED: POST /api/bookings/razorpay-order
-// ──────────────────────────────────────────────────────────────
-export const createRazorpayOrder = async (req, res) => {
-    try {
-        const { bookingId } = req.body;
-        const booking = await Booking.findById(bookingId);
-        if (!booking) return fail(res, 'Booking not found', 404);
-
-        const razorpay = new Razorpay({
-            key_id:     process.env.RAZORPAY_KEY_ID     || 'rzp_test_placeholder',
-            key_secret: process.env.RAZORPAY_KEY_SECRET || 'placeholder',
-        });
-
-        const order = await razorpay.orders.create({
-            amount:   calcGrandTotal(booking) * 100, // paise
-            currency: 'INR',
-            receipt:  `booking_${bookingId}`,
-        });
-
-        booking.razorpayOrderId = order.id;
-        await booking.save();
-
-        ok(res, {
-            orderId:  order.id,
-            amount:   order.amount,
-            currency: order.currency,
-            keyId:    process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
-        });
-    } catch (error) {
-        fail(res, error.message);
-    }
-};
-
-// ──────────────────────────────────────────────────────────────
-// PROTECTED: POST /api/bookings/verify-razorpay
-// ──────────────────────────────────────────────────────────────
-export const verifyRazorpayPayment = async (req, res) => {
-    try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } = req.body;
-
-        const expected = crypto
-            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'placeholder')
-            .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-            .digest('hex');
-
-        if (expected !== razorpay_signature) return fail(res, 'Payment signature verification failed');
-
-        await Booking.findByIdAndUpdate(bookingId, {
-            isPaid:            true,
-            paymentMethod:     'razorpay',
-            status:            'confirmed',
-            razorpayOrderId:   razorpay_order_id,
-            razorpayPaymentId: razorpay_payment_id,
-        });
-
-        ok(res, { message: 'Razorpay payment verified' });
     } catch (error) {
         fail(res, error.message);
     }

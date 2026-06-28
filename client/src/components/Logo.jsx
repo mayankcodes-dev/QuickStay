@@ -9,32 +9,16 @@ const Logo = ({ size = "md", iconOnly = false }) => {
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", userSelect: "none" }}>
       {/* Circular Y icon */}
-      <div
+      <img 
+        src="/logo.png" 
+        alt="YoYo Logo" 
         style={{
           width: d,
           height: d,
-          borderRadius: "50%",
-          background: "linear-gradient(135deg, #E8003D 0%, #C50030 100%)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 2px 10px rgba(232,0,61,0.35)",
           flexShrink: 0,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'Plus Jakarta Sans', 'Arial Black', sans-serif",
-            fontWeight: 900,
-            fontSize: `${d * 0.55}px`,
-            color: "#fff",
-            lineHeight: 1,
-            marginTop: "1px",
-          }}
-        >
-          Y
-        </span>
-      </div>
+          objectFit: 'contain'
+        }} 
+      />
 
       {/* Wordmark — hidden in iconOnly mode */}
       {!iconOnly && (

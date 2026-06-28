@@ -3,18 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppContext } from '../context/AppContext';
 import Logo from './Logo';
 
-// ── Maya avatar SVG (Namaste pose, inspired by Air India Tia) ────
 const MayaAvatar = ({ size = 48, className = '' }) => (
   <div
-    className={`rounded-full flex items-center justify-center text-white font-black select-none flex-shrink-0 ${className}`}
+    className={`rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${className}`}
     style={{
       width: size, height: size,
-      background: 'linear-gradient(135deg, #E8003D 0%, #FF6B6B 100%)',
-      fontSize: size * 0.42,
-      boxShadow: '0 4px 16px rgba(232,0,61,0.35)',
+      boxShadow: '0 4px 16px rgba(232,0,61,0.25)',
+      background: '#fff',
     }}
   >
-    🙏
+    <img src="/maya.png" alt="Maya Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
   </div>
 );
 
