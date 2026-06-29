@@ -110,15 +110,24 @@ export const AppProvider = ({ children }) => {
         setWishlist(data.wishlist?.map(id => id.toString()) || []);
         // Keep local user role in sync (e.g. after hotel registration)
         setUser(prev => prev ? { ...prev, role: data.role } : prev);
+      } else {
+        // Token is invalid or user no longer exists in DB (stale Clerk token, etc.)
+        // Silently clear session so the user isn't stuck in a broken "logged in" state
+        console.warn('[Auth] fetchUser failed — clearing stale session:', data.message);
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        setToken(null);
+        setUser(null);
+        delete axios.defaults.headers.common['Authorization'];
       }
-    } catch { /* silent */ }
+    } catch { /* network error — keep session, will retry on next page load */ }
   }, [token]);
 
   useEffect(() => { if (user) fetchUser(); }, [user?._id]);
 
   // ── Wishlist toggle ──────────────────────────────────────────
   const toggleWishlist = useCallback(async (roomId) => {
-    if (!token) { toast.error('Please login to save rooms'); navigate('/login'); return; }
+    if (!token) { toast.error('Please login to save rooms'); navigate('/login', { state: { from: window.location.pathname } }); return; }
     try {
       const { data } = await axios.post(`/api/user/wishlist/${roomId}`);
       if (data.success) {

@@ -7,7 +7,7 @@ import { ok, fail } from '../utils/respond.js';
 export const registerHotel = async (req, res) => {
     try {
         const { name, address, contact, city } = req.body;
-        const owner = req.user._id.toString();
+        const owner = req.user._id;
 
         if (await Hotel.findOne({ owner })) return fail(res, 'Hotel already registered');
 
@@ -23,7 +23,7 @@ export const registerHotel = async (req, res) => {
 // ── PATCH /api/hotels/  (protected hotelOwner) ───────────────
 export const updateHotel = async (req, res) => {
     try {
-        const owner   = req.user._id.toString();
+        const owner   = req.user._id;
         const { name, address, contact, city, description } = req.body;
 
         // Build update object from only provided fields
@@ -55,7 +55,7 @@ export const updateHotel = async (req, res) => {
 // ── GET /api/hotels/owner  (protected hotelOwner) ─────────────
 export const getOwnerHotel = async (req, res) => {
     try {
-        const hotel = await Hotel.findOne({ owner: req.user._id.toString() });
+        const hotel = await Hotel.findOne({ owner: req.user._id });
         if (!hotel) return fail(res, 'No hotel registered', 404);
         ok(res, { hotel });
     } catch (error) {

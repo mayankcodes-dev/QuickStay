@@ -12,7 +12,15 @@ const protect = async (req, res, next) => {
         const token = header.split(' ')[1];
         const decoded = jwt.verify(token, JWT_SECRET);
 
-        const user = await User.findById(decoded.id);
+        // Guard against legacy Clerk-format IDs in old JWTs (e.g. "user_35Sr3...")
+        // User.findById will throw a CastError for non-ObjectId strings
+        let user;
+        try {
+            user = await User.findById(decoded.id);
+        } catch (castErr) {
+            return res.json({ success: false, message: 'Invalid or expired token' });
+        }
+
         if (!user) return res.json({ success: false, message: 'User not found' });
 
         req.user = user;

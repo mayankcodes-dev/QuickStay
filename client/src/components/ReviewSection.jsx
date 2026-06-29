@@ -47,7 +47,7 @@ const ReviewForm = ({ hotelId, roomId, onReviewAdded }) => {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!user) { toast.error('Please login to write a review'); navigate('/login'); return; }
+    if (!user) { toast.error('Please login to write a review'); navigate('/login', { state: { from: window.location.pathname } }); return; }
     if (comment.trim().length < 10) { toast.error('Review must be at least 10 characters'); return; }
     setSubmitting(true);
     try {

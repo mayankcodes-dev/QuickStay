@@ -24,10 +24,58 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// ── Booking card ─────────────────────────────────────────────
-const BookingCard = ({ booking, index }) => {
-  const { currency } = useAppContext();
+// ── Booking card ───────────────────────────────────────────────────
+const BookingCard = ({ booking, index, onCancelled }) => {
+  const { currency, axios, getToken } = useAppContext();
   const nights = calcNights(booking.checkInDate, booking.checkOutDate);
+  const [paying,    setPaying]    = useState(false);
+  const [cancelling,setCancelling]= useState(false);
+
+  const handlePayNow = async () => {
+    setPaying(true);
+    try {
+      const token = await getToken();
+      const { data } = await axios.post(
+        '/api/bookings/stripe-payment',
+        { bookingId: booking._id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (data.success) {
+        window.location.href = data.url;
+      } else {
+        toast.error(data.message || 'Could not start payment');
+      }
+    } catch {
+      toast.error('Payment failed. Please try again.');
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!window.confirm('Cancel this booking?')) return;
+    setCancelling(true);
+    try {
+      const token = await getToken();
+      const { data } = await axios.delete(
+        `/api/bookings/${booking._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (data.success) {
+        toast.success(data.message || 'Booking cancelled');
+        onCancelled?.(booking._id);
+      } else {
+        toast.error(data.message);
+      }
+    } catch {
+      toast.error('Could not cancel booking.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const isCancelled = booking.status === 'cancelled';
+  const isPaid      = booking.isPaid;
 
   return (
     <motion.article
@@ -91,28 +139,53 @@ const BookingCard = ({ booking, index }) => {
             </div>
           </div>
 
-          {/* Price + Type */}
+          {/* Price + Type + Actions */}
           <div
-            className="flex items-center justify-between pt-4 border-t"
+            className="flex items-start justify-between flex-wrap gap-3 pt-4 border-t"
             style={{ borderColor: "var(--color-border)" }}
           >
             <div>
-              <span
-                className="font-black text-lg"
-                style={{ color: "var(--color-primary)" }}
-              >
-                {currency}{((booking.room?.pricePerNight || 0) * nights).toLocaleString("en-IN")}
+              <span className="font-black text-lg" style={{ color: "var(--color-primary)" }}>
+                {currency}{(
+                  (booking.totalPrice || 0) +
+                  (booking.taxAmount  || 0) +
+                  (booking.serviceFee || 0) -
+                  (booking.discountAmount || 0)
+                ).toLocaleString("en-IN")}
               </span>
               <span className="text-xs ml-1" style={{ color: "var(--color-text-muted)" }}>
                 total · {nights} night{nights !== 1 ? "s" : ""}
               </span>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                {isPaid ? '✅ Paid online' : '🏨 Pay at hotel'}
+              </div>
             </div>
-            <span
-              className="px-3 py-1 rounded-full text-xs font-semibold"
-              style={{ background: "var(--color-surface-3)", color: "var(--color-text-secondary)" }}
-            >
-              {booking.room?.roomType}
-            </span>
+
+            {/* Action buttons */}
+            <div className="flex gap-2 flex-wrap">
+              {/* Pay Now — only for unpaid, non-cancelled bookings */}
+              {!isPaid && !isCancelled && (
+                <button
+                  onClick={handlePayNow}
+                  disabled={paying}
+                  className="px-4 py-2 rounded-xl text-xs font-bold transition-all hover:opacity-90 disabled:opacity-50"
+                  style={{ background: 'var(--color-primary)', color: '#fff' }}
+                >
+                  {paying ? 'Redirecting…' : '💳 Pay Now'}
+                </button>
+              )}
+              {/* Cancel — only for non-cancelled */}
+              {!isCancelled && (
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold border transition-all hover:opacity-80 disabled:opacity-50"
+                  style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)', background: 'var(--color-surface-3)' }}
+                >
+                  {cancelling ? 'Cancelling…' : 'Cancel'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -208,7 +281,7 @@ const MyBookings = () => {
   }, [axios, getToken]);
 
   useEffect(() => {
-    if (!user) { navigate("/login"); return; }
+    if (!user) { navigate("/login", { state: { from: "/my-bookings" } }); return; }
     fetchBookings();
   }, [user]);
 
@@ -264,7 +337,12 @@ const MyBookings = () => {
           <div className="space-y-5">
             <AnimatePresence>
               {bookings.map((b, i) => (
-                <BookingCard key={b._id} booking={b} index={i} />
+                <BookingCard
+                  key={b._id}
+                  booking={b}
+                  index={i}
+                  onCancelled={(id) => setBookings(prev => prev.filter(x => x._id !== id))}
+                />
               ))}
             </AnimatePresence>
           </div>

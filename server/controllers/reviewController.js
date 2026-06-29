@@ -10,7 +10,7 @@ export const createReview = async (req, res) => {
 
         // Must have a completed booking for this hotel
         const booking = await Booking.findOne({
-            user:   userId.toString(),
+            user:   userId,
             hotel,
             status: { $in: ['confirmed', 'cancelled'] },
             checkOutDate: { $lte: new Date() },
@@ -73,7 +73,7 @@ export const deleteReview = async (req, res) => {
         const review = await Review.findById(req.params.id);
         if (!review) return fail(res, 'Review not found', 404);
 
-        const canDelete = review.user.toString() === req.user._id.toString() || req.user.role === 'admin';
+        const canDelete = review.user.equals(req.user._id) || req.user.role === 'admin';
         if (!canDelete) return fail(res, 'Unauthorized', 403);
 
         await review.deleteOne();

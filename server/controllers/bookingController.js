@@ -142,7 +142,6 @@ export const validateCoupon = async (req, res) => {
 export const createBooking = async (req, res) => {
     try {
         const { room, checkInDate, checkOutDate, guests, paymentMethod, couponCode } = req.body;
-        const userId = req.user._id.toString();
 
         const isAvailable = await checkAvailability({ room, checkInDate, checkOutDate });
         if (!isAvailable) return fail(res, 'Room is not available for the selected dates');
@@ -158,7 +157,7 @@ export const createBooking = async (req, res) => {
             calcBreakdown(roomData.pricePerNight, nights, couponCode);
 
         const booking = await Booking.create({
-            user:          userId,
+            user:          req.user._id,
             room,
             hotel:         roomData.hotel._id,
             guests:        +guests,
@@ -193,7 +192,7 @@ export const createBooking = async (req, res) => {
 // ──────────────────────────────────────────────────────────────
 export const getUserBookings = async (req, res) => {
     try {
-        const bookings = await Booking.find({ user: req.user._id.toString() })
+        const bookings = await Booking.find({ user: req.user._id })
             .populate('room hotel')
             .sort({ createdAt: -1 });
         ok(res, { bookings });
@@ -207,7 +206,7 @@ export const getUserBookings = async (req, res) => {
 // ──────────────────────────────────────────────────────────────
 export const getHotelBookings = async (req, res) => {
     try {
-        const hotel = await Hotel.findOne({ owner: req.user._id.toString() });
+        const hotel = await Hotel.findOne({ owner: req.user._id });
         if (!hotel) return fail(res, 'No hotel found for this owner', 404);
 
         const bookings = await Booking.find({ hotel: hotel._id })
@@ -244,7 +243,7 @@ export const getHotelBookings = async (req, res) => {
 export const cancelBooking = async (req, res) => {
     try {
         const { id } = req.params;
-        const booking = await Booking.findOne({ _id: id, user: req.user._id.toString() });
+        const booking = await Booking.findOne({ _id: id, user: req.user._id });
         if (!booking) return fail(res, 'Booking not found', 404);
         if (booking.status === 'cancelled') return fail(res, 'Booking already cancelled');
 
@@ -280,7 +279,7 @@ export const updateBookingStatus = async (req, res) => {
         if (!['pending', 'confirmed', 'cancelled'].includes(status))
             return fail(res, 'Invalid status');
 
-        const hotel = await Hotel.findOne({ owner: req.user._id.toString() });
+        const hotel = await Hotel.findOne({ owner: req.user._id });
         if (!hotel) return fail(res, 'Hotel not found', 404);
 
         const booking = await Booking.findOneAndUpdate(

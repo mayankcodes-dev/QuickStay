@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { assets, roomCommonData } from "../assets/assets";
 import StarRating from "../components/StarRating";
@@ -49,6 +49,7 @@ const RoomDetailSkeleton = () => (
 
 const RoomDetails = () => {
   const { id } = useParams();
+  const location = useLocation();
   const { rooms, axios, getToken, navigate, currency, user } = useAppContext();
   const [room,         setRoom]         = useState(null);
   const [mainImage,    setMainImage]    = useState(null);
@@ -58,6 +59,7 @@ const RoomDetails = () => {
   const [isAvailable,  setIsAvailable]  = useState(false);
   const [isChecking,   setIsChecking]   = useState(false);
   const [isBooking,    setIsBooking]    = useState(false);
+  const [paymentMethod,setPaymentMethod]= useState('pay at hotel'); // 'pay at hotel' | 'stripe'
 
   const today  = new Date().toISOString().split("T")[0];
   const nights = calcNights(checkInDate, checkOutDate);
@@ -91,25 +93,40 @@ const RoomDetails = () => {
   // ── Book room ───────────────────────────────────────────────
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    if (!user) { toast.error("Please sign in to book"); navigate("/login"); return; }
+    if (!user) { toast.error("Please sign in to book"); navigate("/login", { state: { from: location.pathname + location.search } }); return; }
     if (!isAvailable) { return checkAvailability(); }
     setIsBooking(true);
     try {
       const token = await getToken();
       const { data } = await axios.post(
         "/api/bookings/book",
-        { room: id, checkInDate, checkOutDate, guests, paymentMethod: "pay at hotel" },
+        { room: id, checkInDate, checkOutDate, guests, paymentMethod },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (data.success) {
-        toast.success("🎉 Room booked successfully!");
-        navigate("/my-bookings");
-        window.scrollTo(0, 0);
+        if (paymentMethod === 'stripe') {
+          // Redirect to Stripe checkout
+          const stripeRes = await axios.post(
+            '/api/bookings/stripe-payment',
+            { bookingId: data.booking._id },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (stripeRes.data.success) {
+            window.location.href = stripeRes.data.url;
+          } else {
+            toast.error(stripeRes.data.message || 'Payment session failed');
+            navigate('/my-bookings');
+          }
+        } else {
+          toast.success("🎉 Room booked! Pay at hotel on arrival.");
+          navigate('/my-bookings');
+          window.scrollTo(0, 0);
+        }
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || error.message);
     } finally {
       setIsBooking(false);
     }
@@ -458,6 +475,36 @@ const RoomDetails = () => {
                 </div>
               )}
 
+              {/* Payment Method */}
+              {isAvailable && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+                    Payment Method
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'pay at hotel', label: '🏨 Pay at Hotel', sub: 'No charge now' },
+                      { id: 'stripe',       label: '💳 Pay Online',   sub: 'Instant confirm' },
+                    ].map(opt => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setPaymentMethod(opt.id)}
+                        className="rounded-xl p-3 text-left border-2 transition-all"
+                        style={{
+                          borderColor:  paymentMethod === opt.id ? 'var(--color-primary)' : 'var(--color-border)',
+                          background:   paymentMethod === opt.id ? 'var(--color-primary-light)' : 'var(--color-surface-3)',
+                          color:        'var(--color-text-primary)',
+                        }}
+                      >
+                        <div className="font-semibold text-sm">{opt.label}</div>
+                        <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{opt.sub}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Submit */}
               <button
                 type="submit"
@@ -472,13 +519,15 @@ const RoomDetails = () => {
                 ) : isBooking ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
-                    Booking…
+                    {paymentMethod === 'stripe' ? 'Redirecting to payment…' : 'Booking…'}
                   </span>
-                ) : isAvailable ? "🎉 Book Now" : "Check Availability"}
+                ) : isAvailable ? (
+                  paymentMethod === 'stripe' ? '💳 Book & Pay Now' : '🎉 Book Now'
+                ) : 'Check Availability'}
               </button>
 
-              <p className="text-center text-xs pt-1" style={{ color: "var(--color-text-muted)" }}>
-                No charge until check-in · Free cancellation
+              <p className="text-center text-xs pt-1" style={{ color: 'var(--color-text-muted)' }}>
+                {paymentMethod === 'stripe' ? 'Secure payment via Stripe · Free cancellation 48h before check-in' : 'No charge until check-in · Free cancellation'}
               </p>
             </form>
           </div>

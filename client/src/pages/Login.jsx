@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 import { useGoogleLogin } from "@react-oauth/google";
-import axios from "axios";
 import Logo from "../components/Logo";
 import GoogleIcon from "../components/GoogleIcon";
 import { sanitize } from "../utils/helpers";
@@ -37,7 +36,11 @@ const Spinner = () => (
 );
 
 const Login = () => {
-  const { login, googleLogin, navigate } = useAppContext();
+  const { login, googleLogin, navigate, axios } = useAppContext();
+  const location = useLocation();
+  // Where to redirect after login — default to home
+  const from = location.state?.from || "/";
+
   const [form,    setForm]    = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [gLoading,setGLoading]= useState(false);
@@ -50,7 +53,7 @@ const Login = () => {
     try {
       await login(sanitize(form.email), form.password);
       toast.success("Welcome back! 👋");
-      navigate("/");
+      navigate(from, { replace: true });
     } catch (err) {
       toast.error(err.message || "Login failed");
     } finally {
@@ -67,13 +70,13 @@ const Login = () => {
           { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
         );
         const { data } = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/auth/google/access`,
+          `/api/auth/google/access`,
           { googleId: gUser.sub, email: gUser.email, name: gUser.name, picture: gUser.picture }
         );
         if (data.success) {
           await googleLogin(null, data);
-          toast.success(`Welcome back, ${gUser.name}! 🎉`);
-          navigate("/");
+          toast.success(`Welcome, ${gUser.name}! 🎉`);
+          navigate(from, { replace: true });
         } else {
           toast.error(data.message || "Google login failed");
         }

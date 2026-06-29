@@ -12,12 +12,40 @@ import Booking from '../models/Booking.js';
 import Review  from '../models/Review.js';
 import { ok, fail } from '../utils/respond.js';
 
-// Lazy-init: only throws if GROQ_API_KEY is missing at call-time, not module-load time
-let _groq = null;
+// ── Current fast model (llama3-8b-8192 was decommissioned June 2025) ──
+const GROQ_MODEL = 'llama-3.1-8b-instant';
+
+// ── Dual-key Groq clients with automatic fallback ──────────────────
+let _groqPrimary   = null;
+let _groqFallback  = null;
+
 const getGroq = () => {
-    if (!process.env.GROQ_API_KEY) throw new Error('GROQ_API_KEY is not configured. Add it to server/.env');
-    if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    return _groq;
+    const key1 = process.env.GROQ_API_KEY;
+    const key2 = process.env.GROQ_API_KEY_2;
+    if (!key1 && !key2) throw new Error('No GROQ_API_KEY configured in server/.env');
+    if (!_groqPrimary  && key1) _groqPrimary  = new Groq({ apiKey: key1 });
+    if (!_groqFallback && key2) _groqFallback = new Groq({ apiKey: key2 });
+    return _groqPrimary || _groqFallback;
+};
+
+// Runs a Groq request, retrying on the fallback key if the primary fails
+const groqRequest = async (params) => {
+    const key2 = process.env.GROQ_API_KEY_2;
+    try {
+        return await getGroq().chat.completions.create(params);
+    } catch (err) {
+        if (key2 && _groqFallback && _groqFallback !== getGroq()) {
+            console.warn('[AI] Primary Groq key failed, trying fallback key:', err.message);
+            return await _groqFallback.chat.completions.create(params);
+        }
+        // If primary IS the fallback, try the other one
+        if (key2 && _groqPrimary) {
+            console.warn('[AI] Trying fallback Groq key:', err.message);
+            if (!_groqFallback) _groqFallback = new Groq({ apiKey: key2 });
+            return await _groqFallback.chat.completions.create(params);
+        }
+        throw err;
+    }
 };
 
 // ── System prompt — Maya's personality & knowledge ───────────────
@@ -88,8 +116,8 @@ export const aiChat = async (req, res) => {
             } catch (_) {}
         }
 
-        const completion = await getGroq().chat.completions.create({
-            model: 'llama3-8b-8192',
+        const completion = await groqRequest({
+            model: GROQ_MODEL,
             messages,
             max_tokens: 200,
             temperature: 0.7,
@@ -132,8 +160,8 @@ Rules:
 - roomType must exactly match one allowed value or null
 - category must exactly match one allowed value or null`;
 
-        const completion = await getGroq().chat.completions.create({
-            model: 'llama3-8b-8192',
+        const completion = await groqRequest({
+            model: GROQ_MODEL,
             messages: [{ role: 'user', content: prompt }],
             max_tokens: 180,
             temperature: 0.1,
@@ -169,8 +197,8 @@ export const reviewSummary = async (req, res) => {
 
         const reviewText = reviews.map(r => `Rating: ${r.rating}/5 - "${r.comment}"`).join('\n');
 
-        const completion = await getGroq().chat.completions.create({
-            model: 'llama3-8b-8192',
+        const completion = await groqRequest({
+            model: GROQ_MODEL,
             messages: [{ role: 'user', content: `Summarize these hotel reviews in 2-3 concise sentences.\nMention what guests love most, any common complaint, and overall sentiment.\nBe specific, not generic. Flowing prose only, no bullet points.\n\nReviews:\n${reviewText}` }],
             max_tokens: 150,
             temperature: 0.4,

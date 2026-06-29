@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 import { useGoogleLogin } from "@react-oauth/google";
-import axios from "axios";
 import Logo from "../components/Logo";
 import GoogleIcon from "../components/GoogleIcon";
 import { sanitize } from "../utils/helpers";
@@ -41,7 +40,10 @@ const FIELDS = [
 ];
 
 const Register = () => {
-  const { register, googleLogin, navigate } = useAppContext();
+  const { register, googleLogin, navigate, axios } = useAppContext();
+  const location = useLocation();
+  const from = location.state?.from || "/";
+
   const [form,    setForm]    = useState({ username: "", email: "", password: "", confirm: "" });
   const [loading, setLoading] = useState(false);
   const [gLoading,setGLoading]= useState(false);
@@ -56,7 +58,7 @@ const Register = () => {
     try {
       await register(sanitize(form.username), sanitize(form.email), form.password);
       toast.success("Account created! Welcome to YoYo 🎉");
-      navigate("/");
+      navigate(from, { replace: true });
     } catch (err) {
       toast.error(err.message || "Registration failed");
     } finally {
@@ -73,13 +75,13 @@ const Register = () => {
           { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
         );
         const { data } = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/auth/google/access`,
+          `/api/auth/google/access`,
           { googleId: gUser.sub, email: gUser.email, name: gUser.name, picture: gUser.picture }
         );
         if (data.success) {
           await googleLogin(null, data);
           toast.success(`Welcome, ${gUser.name}! 🎉`);
-          navigate("/");
+          navigate(from, { replace: true });
         } else {
           toast.error(data.message || "Google sign-up failed");
         }

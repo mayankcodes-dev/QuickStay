@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const bookingSchema = new mongoose.Schema({
-    user:          { type: String, ref: 'User', required: true },       // String (legacy — stores ObjectId as string)
+    user:          { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     room:          { type: mongoose.Schema.Types.ObjectId, ref: 'Room',  required: true },
     hotel:         { type: mongoose.Schema.Types.ObjectId, ref: 'Hotel', required: true },
     checkInDate:   { type: Date, required: true },
@@ -17,9 +17,6 @@ const bookingSchema = new mongoose.Schema({
     isPaid:        { type: Boolean, default: false },
     cancelledAt:   { type: Date },
     refundStatus:  { type: String, enum: ['none', 'pending', 'done'], default: 'none' },
-    // Razorpay
-    razorpayOrderId:   { type: String },
-    razorpayPaymentId: { type: String },
 }, { timestamps: true });
 
 const Booking = mongoose.model('Booking', bookingSchema);

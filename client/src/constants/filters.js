@@ -26,6 +26,7 @@ export const CATEGORIES = ["Budget", "Premium", "Luxury", "Villa", "Business"];
 export const SORT_OPTIONS = [
   "Price: Low to High",
   "Price: High to Low",
+  "Top Rated",
   "Newest First",
 ];
 
@@ -46,4 +47,4 @@ export const matchesPrice = (room, priceRange) => {
 };
 
 /** Default empty filter state */
-export const EMPTY_FILTERS = { roomType: [], priceRange: [], category: [] };
+export const EMPTY_FILTERS = { roomType: [], priceRange: [], category: [], stars: [] };

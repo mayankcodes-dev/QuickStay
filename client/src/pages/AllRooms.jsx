@@ -7,7 +7,7 @@ import HotelCard from "../components/HotelCard";
 import SkeletonCard from "../components/SkeletonCard";
 import { useAppContext } from "../context/AppContext";
 import { ROOM_TYPES, PRICE_RANGES, CATEGORIES, SORT_OPTIONS, matchesPrice } from "../constants/filters";
-import axios from "axios";
+import toast from "react-hot-toast";
 
 // ── Indian cities autocomplete ────────────────────────────
 const CITIES = [
@@ -165,7 +165,7 @@ const CitySearchBar = ({ value, onChange, onSearch }) => {
 // ── Main Page ─────────────────────────────────────────────
 const AllRooms = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { rooms } = useAppContext();
+  const { rooms, roomsLoaded, axios } = useAppContext();
   const navigate = useNavigate();
 
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -187,8 +187,7 @@ const AllRooms = () => {
     if (!nlpQuery.trim()) return;
     setNlpLoading(true);
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
-      const { data } = await axios.post(`${backendUrl}/api/ai/parse-search`, { query: nlpQuery });
+      const { data } = await axios.post(`/api/ai/parse-search`, { query: nlpQuery });
       if (data.success && data.filters) {
         const f = data.filters;
         if (f.city) { setCityInput(f.city); handleSearch(f.city); }
@@ -198,8 +197,14 @@ const AllRooms = () => {
           category:   f.category   ? [f.category]   : prev.category,
           priceRange: f.maxPrice   ? [`Under ₹${f.maxPrice}`] : prev.priceRange,
         }));
+        toast.success('✨ Filters applied from AI search!');
+      } else {
+        toast.error(data.message || 'AI search could not parse your query');
       }
-    } catch (_) {}
+    } catch (err) {
+      toast.error('AI search failed — try again or use manual filters');
+      console.error('[AI Search]', err.message);
+    }
     finally { setNlpLoading(false); }
   };
 
@@ -245,7 +250,9 @@ const AllRooms = () => {
     setGuestCount(1);
   };
 
-  const isLoading = rooms.length === 0;
+  // roomsLoaded: true once the API call finishes (even if rooms array is empty)
+  // Using roomsLoaded prevents showing skeleton cards when filters return 0 results
+  const isLoading = !roomsLoaded;
   const activeFilterCount = filters.roomType.length + filters.priceRange.length + filters.category.length + filters.stars.length;
 
   return (

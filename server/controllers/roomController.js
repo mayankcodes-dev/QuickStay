@@ -7,7 +7,7 @@ import { ok, fail } from '../utils/respond.js';
 export const createRoom = async (req, res) => {
     try {
         const { roomType, pricePerNight, amenities, category } = req.body;
-        const hotel = await Hotel.findOne({ owner: req.user._id.toString() });
+        const hotel = await Hotel.findOne({ owner: req.user._id });
         if (!hotel) return fail(res, 'No hotel found for this owner', 404);
 
         if (!req.files?.length) return fail(res, 'Please upload at least one image');
@@ -37,26 +37,33 @@ export const getRooms = async (req, res) => {
         const allRooms = await Room.find({ isAvailable: true, isDeleted: { $ne: true } })
             .populate({
                 path:    'hotel',
+                // Do NOT populate hotel.owner here — legacy DB has Clerk string IDs
+                // (e.g. "user_35Sr3...") which Mongoose can't cast to ObjectId → CastError
                 options: { strictPopulate: false },
-                populate: { path: 'owner', select: 'image username', options: { strictPopulate: false } },
             })
             .sort({ createdAt: -1 })
             .lean();
 
-        // Filter out any rooms whose hotel or hotel.owner failed to resolve
-        // (can happen when legacy Clerk-format owner IDs remain in the DB)
+        // Filter out rooms where hotel failed to resolve
         const rooms = allRooms.filter(r => r.hotel && r.hotel._id);
-
         ok(res, { rooms });
     } catch (error) {
-        fail(res, error.message);
+        // Last-resort: return rooms without hotel details rather than 400
+        try {
+            const rooms = await Room.find({ isAvailable: true, isDeleted: { $ne: true } })
+                .sort({ createdAt: -1 })
+                .lean();
+            ok(res, { rooms });
+        } catch (err2) {
+            fail(res, err2.message);
+        }
     }
 };
 
 // ── GET /api/rooms/owner  (protected hotelOwner) ──────────────
 export const getOwnerRooms = async (req, res) => {
     try {
-        const hotel = await Hotel.findOne({ owner: req.user._id.toString() });
+        const hotel = await Hotel.findOne({ owner: req.user._id });
         if (!hotel) return fail(res, 'No hotel found for this owner', 404);
 
         const rooms = await Room.find({ hotel: hotel._id, isDeleted: { $ne: true } }).populate('hotel');
@@ -85,7 +92,7 @@ export const updateRoom = async (req, res) => {
         const { id } = req.params;
         const { roomType, pricePerNight, amenities, category } = req.body;
 
-        const hotel = await Hotel.findOne({ owner: req.user._id.toString() });
+        const hotel = await Hotel.findOne({ owner: req.user._id });
         if (!hotel) return fail(res, 'Hotel not found', 404);
 
         const room = await Room.findOne({ _id: id, hotel: hotel._id });

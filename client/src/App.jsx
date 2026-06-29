@@ -34,6 +34,7 @@ const AdminLayout    = lazy(() => import("./pages/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminHotels    = lazy(() => import("./pages/admin/AdminHotels"));
 const AdminUsers     = lazy(() => import("./pages/admin/AdminUsers"));
+const NotFound       = lazy(() => import("./pages/NotFound"));
 
 // ── Suspense fallback ─────────────────────────────────────────
 const PageLoader = () => (
@@ -112,6 +113,9 @@ const App = () => {
                   <Route path="hotels"    element={<AdminHotels />} />
                   <Route path="users"     element={<AdminUsers />} />
                 </Route>
+
+                {/* 404 catch-all */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </PageTransition>
           </Suspense>
