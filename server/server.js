@@ -119,8 +119,12 @@ app.post('/api/stripe', express.raw({ type: 'application/json' }), stripeWebhook
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// 6. NoSQL injection prevention
-app.use(mongoSanitize({ replaceWith: '_' }));
+// 6. NoSQL injection prevention — only sanitize body & params (req.query is read-only getter in Node 18+)
+app.use((req, _res, next) => {
+    if (req.body)   mongoSanitize.sanitize(req.body,   { replaceWith: '_' });
+    if (req.params) mongoSanitize.sanitize(req.params, { replaceWith: '_' });
+    next();
+});
 
 // 7. HTTP Parameter Pollution prevention
 app.use(hpp({
