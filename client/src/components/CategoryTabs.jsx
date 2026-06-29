@@ -64,6 +64,16 @@ const categories = [
   },
 ];
 
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+};
+
+const tabVariants = {
+  hidden:  { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+};
+
 const CategoryTabs = ({ onSelect }) => {
   const [active, setActive] = useState("all");
   const { darkMode } = useAppContext();
@@ -75,26 +85,41 @@ const CategoryTabs = ({ onSelect }) => {
 
   return (
     <section className="py-6 overflow-x-auto scrollbar-hide" style={{ background: "var(--color-surface)" }}>
-      <div className="flex items-center gap-2 px-4 md:px-16 lg:px-24 xl:px-32 min-w-max md:min-w-0 md:justify-center">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex items-center gap-2 px-4 md:px-16 lg:px-24 xl:px-32 min-w-max md:min-w-0 md:justify-center"
+      >
         {categories.map((cat) => {
           const isActive = active === cat.id;
           return (
-            <button
+            <motion.button
               key={cat.id}
+              variants={tabVariants}
               onClick={() => handleSelect(cat.id)}
-              className="relative flex flex-col items-center gap-1.5 px-5 py-3 rounded-xl transition-all duration-200 cursor-pointer group shrink-0"
+              whileHover={{ scale: 1.06, y: -2 }}
+              whileTap={{ scale: 0.93 }}
+              className="relative flex flex-col items-center gap-1.5 px-5 py-3 rounded-xl cursor-pointer group shrink-0"
               style={{
                 background: isActive ? "var(--color-primary-light)" : "transparent",
                 color: isActive ? "var(--color-primary)" : "var(--color-text-secondary)",
+                transition: "background 0.2s, color 0.2s",
               }}
             >
-              {/* Icon */}
-              <span className="transition-transform duration-200 group-hover:scale-110">
+              {/* Icon with hover rotation */}
+              <motion.span
+                whileHover={{ rotate: isActive ? 0 : 12 }}
+                transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                className="block"
+              >
                 {cat.icon}
-              </span>
+              </motion.span>
+
               {/* Label */}
               <span className="text-xs font-semibold whitespace-nowrap">{cat.label}</span>
-              {/* Active underline */}
+
+              {/* Active indicator — layout animated pill */}
               {isActive && (
                 <motion.div
                   layoutId="category-indicator"
@@ -103,10 +128,20 @@ const CategoryTabs = ({ onSelect }) => {
                   transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               )}
-            </button>
+
+              {/* Active background — layout animated */}
+              {isActive && (
+                <motion.div
+                  layoutId="category-bg"
+                  className="absolute inset-0 rounded-xl -z-10"
+                  style={{ background: "var(--color-primary-light)" }}
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                />
+              )}
+            </motion.button>
           );
         })}
-      </div>
+      </motion.div>
     </section>
   );
 };

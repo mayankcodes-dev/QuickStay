@@ -64,8 +64,8 @@ const STEPS = [
 ];
 
 const connector = {
-  hidden: { pathLength: 0, opacity: 0 },
-  visible: { pathLength: 1, opacity: 1, transition: { duration: 1, ease: "easeInOut" } },
+  hidden:  { pathLength: 0, opacity: 0 },
+  visible: { pathLength: 1, opacity: 1, transition: { duration: 1.2, ease: "easeInOut" } },
 };
 
 const HowItWorks = () => {
@@ -83,15 +83,15 @@ const HowItWorks = () => {
         transition={{ duration: 0.55 }}
         className="text-center mb-16 md:mb-20"
       >
-        <span
+        <motion.span
           className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-4"
-          style={{
-            background: "var(--color-primary-light)",
-            color: "var(--color-primary)",
-          }}
+          style={{ background: "var(--color-primary-light)", color: "var(--color-primary)" }}
+          whileInView={{ scale: [0.9, 1.05, 1] }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
         >
           Simple Process
-        </span>
+        </motion.span>
         <h2
           id="how-it-works-heading"
           className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
@@ -142,37 +142,45 @@ const HowItWorks = () => {
           {STEPS.map((s, i) => (
             <motion.div
               key={s.step}
-              initial={{ opacity: 0, y: 32 }}
+              initial={{ opacity: 0, y: 36 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.55, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
               className="relative flex flex-col"
             >
               {/* Card */}
-              <div
-                className="flex flex-col flex-1 p-8 rounded-3xl transition-all duration-300 hover:-translate-y-1"
+              <motion.div
+                className="flex flex-col flex-1 p-8 rounded-3xl"
                 style={{
                   background: "var(--color-surface-2)",
                   boxShadow: "var(--shadow-md)",
                   border: "1px solid var(--color-border)",
                 }}
+                whileHover={{
+                  scale: 1.02,
+                  y: -8,
+                  boxShadow: "var(--shadow-xl)",
+                  transition: { duration: 0.28, ease: [0.34, 1.56, 0.64, 1] },
+                }}
               >
                 {/* Step number + icon row */}
                 <div className="flex items-center justify-between mb-6">
-                  <span
+                  <motion.span
                     className="font-display font-black text-5xl leading-none select-none"
                     style={{ color: s.color, opacity: 0.15 }}
+                    whileHover={{ opacity: 0.25, scale: 1.05 }}
                     aria-hidden="true"
                   >
                     {s.step}
-                  </span>
+                  </motion.span>
 
-                  <div
+                  <motion.div
                     className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
                     style={{ background: s.bg, color: s.color }}
+                    whileHover={{ rotate: [0, -8, 8, -4, 0], transition: { duration: 0.5 } }}
                   >
                     {s.icon}
-                  </div>
+                  </motion.div>
                 </div>
 
                 {/* Badge */}
@@ -207,28 +215,16 @@ const HowItWorks = () => {
                 {/* Bottom accent bar */}
                 <div
                   className="mt-6 h-0.5 rounded-full"
-                  style={{
-                    background: `linear-gradient(90deg, ${s.color} 0%, transparent 100%)`,
-                    opacity: 0.3,
-                  }}
+                  style={{ background: `linear-gradient(90deg, ${s.color} 0%, transparent 100%)`, opacity: 0.3 }}
                   aria-hidden="true"
                 />
-              </div>
+              </motion.div>
 
               {/* Mobile step connector */}
               {i < STEPS.length - 1 && (
-                <div
-                  className="md:hidden flex justify-center my-4"
-                  aria-hidden="true"
-                >
+                <div className="md:hidden flex justify-center my-4" aria-hidden="true">
                   <svg width="2" height="32" viewBox="0 0 2 32">
-                    <line
-                      x1="1" y1="0" x2="1" y2="32"
-                      stroke="var(--color-primary)"
-                      strokeWidth="2"
-                      strokeDasharray="4 3"
-                      strokeLinecap="round"
-                    />
+                    <line x1="1" y1="0" x2="1" y2="32" stroke="var(--color-primary)" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round"/>
                   </svg>
                 </div>
               )}
@@ -245,16 +241,15 @@ const HowItWorks = () => {
         transition={{ duration: 0.5, delay: 0.45 }}
         className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-16"
       >
-        <a
+        <motion.a
           href="/rooms"
           className="btn-primary text-sm px-8 py-3.5 rounded-2xl"
+          whileHover={{ scale: 1.05, boxShadow: "0 12px 32px rgba(232,0,61,0.45)" }}
+          whileTap={{ scale: 0.97 }}
         >
           Start Booking Now →
-        </a>
-        <div
-          className="flex items-center gap-2 text-sm"
-          style={{ color: "var(--color-text-muted)" }}
-        >
+        </motion.a>
+        <div className="flex items-center gap-2 text-sm" style={{ color: "var(--color-text-muted)" }}>
           <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-green-500" aria-hidden="true">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
           </svg>

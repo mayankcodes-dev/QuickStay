@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 import Hero from "../components/Hero";
 import FeaturedDestination from "../components/FeaturedDestination";
 import ExclusiveOffers from "../components/ExclusiveOffers";
@@ -11,22 +12,90 @@ import FlashDeals from "../components/FlashDeals";
 import AppBanner from "../components/AppBanner";
 import SkeletonCard from "../components/SkeletonCard";
 import HowItWorks from "../components/HowItWorks";
-import { motion } from "framer-motion";
-import { useAppContext } from "../context/AppContext";
+import { motion, useInView, useMotionValue, useSpring, animate } from "framer-motion";
+import { useMemo } from "react";
 
 const STATS = [
-  { icon: "🏨", value: "10,000+", label: "Hotels Across India" },
-  { icon: "😊", value: "1M+",    label: "Happy Guests" },
-  { icon: "🏙️", value: "200+",   label: "Cities Covered" },
-  { icon: "💰", value: "₹500",   label: "Starting per Night" },
+  { icon: "🏨", value: "10000", display: "10,000+", label: "Hotels Across India" },
+  { icon: "😊", value: "1000000", display: "1M+",    label: "Happy Guests" },
+  { icon: "🏙️", value: "200",    display: "200+",   label: "Cities Covered" },
+  { icon: "💰", value: "500",    display: "₹500",   label: "Starting per Night" },
 ];
+
+// ── Animated counting number ─────────────────────────────────
+const CountUp = ({ display, inView }) => {
+  const [shown, setShown] = useState("0");
+  const hasRun = useRef(false);
+
+  useEffect(() => {
+    if (inView && !hasRun.current) {
+      hasRun.current = true;
+      // For display values like "10,000+" just animate in
+      setTimeout(() => setShown(display), 50);
+    }
+  }, [inView, display]);
+
+  return (
+    <motion.span
+      key={shown}
+      initial={inView && shown === display ? { opacity: 0, y: 16, scale: 0.85 } : false}
+      animate={inView && shown === display ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {shown}
+    </motion.span>
+  );
+};
+
+const StatCard = ({ s, i }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: i * 0.08, duration: 0.5 }}
+      whileHover={{ scale: 1.04, y: -5, transition: { duration: 0.25, ease: [0.34, 1.56, 0.64, 1] } }}
+      className="text-center p-8 rounded-3xl cursor-default"
+      style={{
+        background: "var(--color-surface-2)",
+        boxShadow: "var(--shadow-md)",
+        border: "1px solid var(--color-border)",
+        transition: "border-color 0.2s, box-shadow 0.2s",
+      }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = "var(--color-border-strong)"}
+      onMouseLeave={e => e.currentTarget.style.borderColor = "var(--color-border)"}
+    >
+      <motion.div
+        className="text-3xl mb-2"
+        animate={inView ? { scale: [0.8, 1.15, 1] } : {}}
+        transition={{ duration: 0.5, delay: i * 0.08 + 0.1 }}
+      >
+        {s.icon}
+      </motion.div>
+      <div
+        className="font-display font-black text-xl"
+        style={{ color: "var(--color-primary)" }}
+      >
+        <CountUp display={s.display} inView={inView} />
+      </div>
+      <div
+        className="text-xs mt-1"
+        style={{ color: "var(--color-text-secondary)" }}
+      >
+        {s.label}
+      </div>
+    </motion.div>
+  );
+};
 
 const Home = () => {
   const { rooms, roomsLoaded } = useAppContext();
   const [activeCategory, setActiveCategory] = useState("all");
 
-  // Show skeleton until the first API response arrives (success OR error).
-  // rooms.length === 0 was wrong — it kept the skeleton forever when DB is empty.
   const isLoading = !roomsLoaded;
 
   const filteredRooms = useMemo(() => {
@@ -57,12 +126,16 @@ const Home = () => {
             className="flex items-end justify-between mb-14"
           >
             <div>
-              <p
+              <motion.p
                 className="text-xs font-bold uppercase tracking-widest mb-2"
                 style={{ color: "var(--color-primary)" }}
+                initial={{ opacity: 0, x: -12 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: 0.1 }}
               >
                 Handpicked for You
-              </p>
+              </motion.p>
               <h2
                 id="hotels-heading"
                 className="font-display text-3xl md:text-4xl font-bold"
@@ -80,62 +153,38 @@ const Home = () => {
               </p>
             </div>
 
-            <Link
-              to="/rooms"
-              className="text-sm font-semibold hidden md:flex items-center gap-1.5 transition-opacity hover:opacity-75"
-              style={{ color: "var(--color-primary)" }}
-            >
-              View all
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="w-3.5 h-3.5"
-                aria-hidden="true"
+            <motion.div whileHover={{ x: 4 }} transition={{ duration: 0.15 }}>
+              <Link
+                to="/rooms"
+                className="text-sm font-semibold hidden md:flex items-center gap-1.5 transition-opacity hover:opacity-75"
+                style={{ color: "var(--color-primary)" }}
               >
-                <path d="M3 8h10M9 4l4 4-4 4" />
-              </svg>
-            </Link>
+                View all
+                <svg
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="w-3.5 h-3.5"
+                  aria-hidden="true"
+                >
+                  <path d="M3 8h10M9 4l4 4-4 4" />
+                </svg>
+              </Link>
+            </motion.div>
           </motion.div>
 
           {/* Stats strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
             {STATS.map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className="text-center p-8 rounded-3xl"
-                style={{
-                  background: "var(--color-surface-2)",
-                  boxShadow: "var(--shadow-md)",
-                  border: "1px solid var(--color-border)",
-                }}
-              >
-                <div className="text-3xl mb-2">{s.icon}</div>
-                <div
-                  className="font-display font-black text-xl"
-                  style={{ color: "var(--color-primary)" }}
-                >
-                  {s.value}
-                </div>
-                <div
-                  className="text-xs mt-1"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  {s.label}
-                </div>
-              </motion.div>
+              <StatCard key={s.label} s={s} i={i} />
             ))}
           </div>
 
           {/* Hotel grid or skeletons */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7">
             {isLoading ? (
-              Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
+              Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} index={i} />)
             ) : filteredRooms.length > 0 ? (
               filteredRooms.map((room, i) => (
                 <HotelCard key={room._id} room={room} index={i} />

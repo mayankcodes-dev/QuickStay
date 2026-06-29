@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cities } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 
@@ -10,9 +10,7 @@ const HERO_VIDEO     = "https://res.cloudinary.com/dgqgzmzed/video/upload/v17827
 const HERO_VIDEO_ALT = "https://res.cloudinary.com/dgqgzmzed/video/upload/v1782646953/hero_video_alt_bjksts.mp4";
 
 // ── Static fallback (shown on mobile + while video loads on desktop)
-// Uses a wide hero hotel image — swap to your own poster after uploading
 const FALLBACK_POSTER = `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_1920,h_1080,c_fill,g_auto/yoyo/assets/hero_image`;
-
 
 const trustBadges = [
   { icon: "🏨", label: "10,000+", sub: "Hotels" },
@@ -43,26 +41,54 @@ const SearchField = ({ label, icon, borderRight = true, children }) => (
   </div>
 );
 
-// ── Guests stepper (reuses SearchField wrapper)
+// ── Guests stepper
 const GuestsField = ({ guests, setGuests }) => (
   <SearchField label="Guests" icon="👤" borderRight>
     <div className="flex items-center gap-2">
-      <button
+      <motion.button
         type="button"
         onClick={() => setGuests(g => Math.max(1, g - 1))}
-        className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition hover:bg-gray-100"
-        style={{ color: "#E8003D", border: "1px solid rgba(232,0,61,0.3)" }}
-      >−</button>
-      <span className="text-sm font-bold text-gray-800 w-4 text-center">{guests}</span>
-      <button
+        whileHover={{ scale: 1.12 }}
+        whileTap={{ scale: 0.88 }}
+        className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold"
+        style={{ color: "#E8003D", border: "1px solid rgba(232,0,61,0.3)", background: "rgba(232,0,61,0.06)" }}
+      >−</motion.button>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={guests}
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 6 }}
+          transition={{ duration: 0.15 }}
+          className="text-sm font-bold text-gray-800 w-4 text-center"
+        >
+          {guests}
+        </motion.span>
+      </AnimatePresence>
+      <motion.button
         type="button"
         onClick={() => setGuests(g => Math.min(10, g + 1))}
-        className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold transition hover:bg-gray-100"
-        style={{ color: "#E8003D", border: "1px solid rgba(232,0,61,0.3)" }}
-      >+</button>
+        whileHover={{ scale: 1.12 }}
+        whileTap={{ scale: 0.88 }}
+        className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold"
+        style={{ color: "#E8003D", border: "1px solid rgba(232,0,61,0.3)", background: "rgba(232,0,61,0.06)" }}
+      >+</motion.button>
     </div>
   </SearchField>
 );
+
+// ── Headline words — staggered entrance
+const headlineWords = ["Your", "Perfect", "Stay,"];
+const headlineAccent = ["One", "Click", "Away"];
+
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } },
+};
+const wordVariants = {
+  hidden:  { opacity: 0, y: 32, rotateX: -25 },
+  visible: { opacity: 1, y: 0, rotateX: 0, transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } },
+};
 
 const Hero = () => {
   const { navigate, getToken, axios, setSearchedCities } = useAppContext();
@@ -70,6 +96,7 @@ const Hero = () => {
   const [checkIn,     setCheckIn]     = useState("");
   const [checkOut,    setCheckOut]    = useState("");
   const [guests,      setGuests]      = useState(1);
+  const [formFocused, setFormFocused] = useState(false);
 
   const today    = new Date().toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
@@ -101,17 +128,11 @@ const Hero = () => {
   return (
     <section className="relative w-full h-screen min-h-[640px] overflow-hidden -mt-16">
 
-      {/* ── Background — Desktop: video / Mobile: static image ──── */}
-
-      {/* Mobile background (< md) — static Cloudinary image, no video */}
+      {/* ── Background ──── */}
       <div
         className="md:hidden absolute inset-0 w-full h-full"
-        style={{
-          background: `url(${FALLBACK_POSTER}) center/cover no-repeat`,
-        }}
+        style={{ background: `url(${FALLBACK_POSTER}) center/cover no-repeat` }}
       />
-
-      {/* Desktop background (≥ md) — autoplay video */}
       <video
         className="hidden md:block absolute inset-0 w-full h-full object-cover scale-105"
         autoPlay muted loop playsInline
@@ -122,38 +143,43 @@ const Hero = () => {
       </video>
 
       {/* ── Multi-layer cinematic overlay ─────────────────── */}
-      {/* Base dark layer */}
-      <div className="absolute inset-0" style={{ background: "rgba(5,5,15,0.52)" }} />
-      {/* Bottom-heavy gradient for search bar readability */}
+      <motion.div
+        className="absolute inset-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.5 }}
+        style={{ background: "rgba(5,5,15,0.52)" }}
+      />
       <div
         className="absolute inset-0"
         style={{
           background: "linear-gradient(to bottom, transparent 0%, rgba(5,5,20,0.40) 40%, rgba(5,5,20,0.75) 70%, rgba(5,5,20,0.90) 100%)",
         }}
       />
-      {/* Top vignette so navbar blends */}
       <div
         className="absolute inset-0"
         style={{
           background: "linear-gradient(to bottom, rgba(0,0,0,0.30) 0%, transparent 25%)",
         }}
       />
-      {/* Subtle red atmospheric glow from bottom-left */}
-      <div
+      {/* Animated red atmospheric glow */}
+      <motion.div
         className="absolute inset-0 pointer-events-none"
+        animate={{ opacity: [0.18, 0.28, 0.18] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         style={{
-          background: "radial-gradient(ellipse 80% 60% at 20% 110%, rgba(232,0,61,0.18) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse 80% 60% at 20% 110%, rgba(232,0,61,0.22) 0%, transparent 70%)",
         }}
       />
 
       {/* ── Content ───────────────────────────────────────── */}
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 text-center">
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 text-center" style={{ perspective: "800px" }}>
 
         {/* Platform badge */}
         <motion.div
-          initial={{ opacity: 0, y: -20, scale: 0.9 }}
+          initial={{ opacity: 0, y: -20, scale: 0.85 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-8"
           style={{
             background: "rgba(232,0,61,0.15)",
@@ -161,7 +187,11 @@ const Hero = () => {
             backdropFilter: "blur(12px)",
           }}
         >
-          <span style={{ color: "#FF4570" }}>★</span>
+          <motion.span
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            style={{ color: "#FF4570" }}
+          >★</motion.span>
           <span
             className="text-xs font-bold tracking-[0.12em] uppercase"
             style={{ color: "rgba(255,255,255,0.92)" }}
@@ -170,34 +200,39 @@ const Hero = () => {
           </span>
         </motion.div>
 
-        {/* ── Main headline ──────────────────────────────── */}
+        {/* ── Main headline — word-by-word stagger ─────────── */}
         <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
-          className="font-display font-extrabold text-white leading-[1.02] mb-4 max-w-4xl"
-          style={{
-            fontSize: "clamp(2.4rem, 7vw, 5.2rem)",
-            letterSpacing: "-0.035em",
-            textShadow: "0 2px 40px rgba(0,0,0,0.6)",
-          }}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="font-display font-extrabold text-white leading-[1.04] mb-4 max-w-4xl"
+          style={{ fontSize: "clamp(2.4rem, 7vw, 5.2rem)", letterSpacing: "-0.035em", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
         >
-          Your Perfect Stay,
+          {headlineWords.map((word, i) => (
+            <motion.span key={i} variants={wordVariants} className="inline-block mr-[0.25em]">
+              {word}
+            </motion.span>
+          ))}
           <br />
-          <span style={{ color: "#FF3B6B" }}>One Click</span>
-          {" "}Away
+          {headlineAccent.map((word, i) => (
+            <motion.span
+              key={`accent-${i}`}
+              variants={wordVariants}
+              className="inline-block mr-[0.25em]"
+              style={{ color: i === 0 ? "#FF3B6B" : i === 1 ? "#FF5577" : "#FFFFFF" }}
+            >
+              {word}
+            </motion.span>
+          ))}
         </motion.h1>
 
         {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.3 }}
+          transition={{ duration: 0.7, delay: 0.55 }}
           className="text-lg max-w-md mb-10 leading-relaxed"
-          style={{
-            color: "rgba(255,255,255,0.72)",
-            textShadow: "0 1px 12px rgba(0,0,0,0.5)",
-          }}
+          style={{ color: "rgba(255,255,255,0.72)", textShadow: "0 1px 12px rgba(0,0,0,0.5)" }}
         >
           Budget to luxury — 10,000+ verified hotels across India.
           Book instantly, pay your way.
@@ -205,18 +240,24 @@ const Hero = () => {
 
         {/* ── Search bar ─────────────────────────────────── */}
         <motion.form
-          initial={{ opacity: 0, y: 36, scale: 0.96 }}
+          initial={{ opacity: 0, y: 40, scale: 0.94 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.75, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.75, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
           onSubmit={onSearch}
           className="w-full max-w-4xl"
+          animate-while-hover={{ scale: 1.01 }}
+          onFocus={() => setFormFocused(true)}
+          onBlur={() => setFormFocused(false)}
           style={{
             background: "rgba(255,255,255,0.97)",
             backdropFilter: "blur(32px) saturate(200%)",
             WebkitBackdropFilter: "blur(32px) saturate(200%)",
             borderRadius: "20px",
-            boxShadow: "0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.15)",
+            boxShadow: formFocused
+              ? "0 32px 80px rgba(0,0,0,0.55), 0 0 0 2px rgba(232,0,61,0.25)"
+              : "0 32px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.15)",
             overflow: "hidden",
+            transition: "box-shadow 0.3s ease",
           }}
         >
           <div className="flex flex-col md:flex-row items-stretch">
@@ -266,9 +307,11 @@ const Hero = () => {
 
             {/* Search CTA */}
             <div className="flex items-center p-3">
-              <button
+              <motion.button
                 type="submit"
-                className="flex items-center gap-2.5 font-bold text-sm text-white transition-all duration-200 hover:scale-105 active:scale-100"
+                whileHover={{ scale: 1.05, boxShadow: "0 12px 32px rgba(232,0,61,0.60)" }}
+                whileTap={{ scale: 0.96 }}
+                className="flex items-center gap-2.5 font-bold text-sm text-white"
                 style={{
                   background: "linear-gradient(135deg, #E8003D 0%, #B5002E 100%)",
                   boxShadow: "0 8px 24px rgba(232,0,61,0.50)",
@@ -282,16 +325,16 @@ const Hero = () => {
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
                 Search Hotels
-              </button>
+              </motion.button>
             </div>
           </div>
         </motion.form>
 
         {/* ── Trust badges ───────────────────────────────── */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.6 }}
+          transition={{ duration: 0.7, delay: 0.7 }}
           className="flex flex-wrap justify-center gap-0 mt-7"
           style={{
             background: "rgba(0,0,0,0.28)",
@@ -302,19 +345,19 @@ const Hero = () => {
           }}
         >
           {trustBadges.map((b, i) => (
-            <div
+            <motion.div
               key={i}
               className="flex items-center gap-2 px-4"
-              style={{
-                borderRight: i < trustBadges.length - 1 ? "1px solid rgba(255,255,255,0.12)" : "none",
-              }}
+              style={{ borderRight: i < trustBadges.length - 1 ? "1px solid rgba(255,255,255,0.12)" : "none" }}
+              whileHover={{ scale: 1.06 }}
+              transition={{ type: "spring", stiffness: 400 }}
             >
               <span className="text-base leading-none">{b.icon}</span>
               <div className="text-left">
                 <div className="text-xs font-extrabold text-white leading-none">{b.label}</div>
                 <div className="text-[10px] leading-none mt-0.5" style={{ color: "rgba(255,255,255,0.50)" }}>{b.sub}</div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </motion.div>
 
@@ -322,7 +365,7 @@ const Hero = () => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
+          transition={{ delay: 1.6 }}
           className="absolute bottom-8 flex flex-col items-center gap-1"
         >
           <span
@@ -332,8 +375,8 @@ const Hero = () => {
             Scroll
           </span>
           <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+            animate={{ y: [0, 8, 0] }}
+            transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.30)" strokeWidth="1.5" className="w-5 h-5">
               <path d="M12 5v14M5 12l7 7 7-7"/>

@@ -11,17 +11,23 @@ import { sanitize } from "../utils/helpers";
 // ── Auth background (shared with Register) ────────────────────
 const AuthBackground = () => (
   <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-    <div
+    <motion.div
       className="absolute top-1/4 -right-32 w-96 h-96 rounded-full blur-3xl"
       style={{ background: "radial-gradient(circle, #E8003D 0%, transparent 70%)", opacity: 0.10 }}
+      animate={{ scale: [1, 1.18, 0.92, 1], rotate: [0, 8, -4, 0] }}
+      transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
     />
-    <div
+    <motion.div
       className="absolute bottom-1/4 -left-32 w-80 h-80 rounded-full blur-3xl"
       style={{ background: "radial-gradient(circle, #6C3BD5 0%, transparent 70%)", opacity: 0.08 }}
+      animate={{ scale: [1, 0.88, 1.14, 1], rotate: [0, -10, 5, 0] }}
+      transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1 }}
     />
-    <div
+    <motion.div
       className="absolute top-2/4 right-1/4 w-64 h-64 rounded-full blur-3xl"
       style={{ background: "radial-gradient(circle, #10B981 0%, transparent 70%)", opacity: 0.05 }}
+      animate={{ scale: [1, 1.22, 0.95, 1], rotate: [0, 12, -6, 0] }}
+      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
     />
   </div>
 );
@@ -132,19 +138,32 @@ const Login = () => {
           </p>
 
           {/* Google */}
-          <button
+          <motion.button
             onClick={handleGoogle}
             disabled={gLoading}
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 mb-6"
+            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-sm font-semibold disabled:opacity-50 mb-6"
             style={{
               background: "var(--color-surface-3)",
               border: "1px solid var(--color-border-strong)",
               color: "var(--color-text-primary)",
             }}
+            whileHover={{ scale: 1.02, boxShadow: "var(--shadow-md)" }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.15 }}
           >
-            {gLoading ? <Spinner /> : <GoogleIcon />}
+            <AnimatePresence mode="wait" initial={false}>
+              {gLoading ? (
+                <motion.span key="gspinner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <Spinner />
+                </motion.span>
+              ) : (
+                <motion.span key="gicon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <GoogleIcon />
+                </motion.span>
+              )}
+            </AnimatePresence>
             {gLoading ? "Connecting…" : "Continue with Google"}
-          </button>
+          </motion.button>
 
           {/* Divider */}
           <div className="flex items-center gap-3 mb-6">
@@ -173,14 +192,12 @@ const Login = () => {
                 placeholder="you@example.com"
                 autoComplete="email"
                 maxLength={254}
-                className="w-full rounded-xl px-4 py-3 text-sm border outline-none transition-all"
+                className="input-field w-full rounded-xl px-4 py-3 text-sm border outline-none"
                 style={{
                   background: "var(--color-surface-3)",
                   borderColor: "var(--color-border)",
                   color: "var(--color-text-primary)",
                 }}
-                onFocus={(e) => { e.target.style.borderColor = "var(--color-primary)"; e.target.style.boxShadow = "var(--shadow-glow)"; }}
-                onBlur={(e)  => { e.target.style.borderColor = "var(--color-border)";  e.target.style.boxShadow = "none"; }}
               />
             </div>
 
@@ -202,28 +219,39 @@ const Login = () => {
                 placeholder="••••••••"
                 autoComplete="current-password"
                 maxLength={128}
-                className="w-full rounded-xl px-4 py-3 text-sm border outline-none transition-all"
+                className="input-field w-full rounded-xl px-4 py-3 text-sm border outline-none"
                 style={{
                   background: "var(--color-surface-3)",
                   borderColor: "var(--color-border)",
                   color: "var(--color-text-primary)",
                 }}
-                onFocus={(e) => { e.target.style.borderColor = "var(--color-primary)"; e.target.style.boxShadow = "var(--shadow-glow)"; }}
-                onBlur={(e)  => { e.target.style.borderColor = "var(--color-border)";  e.target.style.boxShadow = "none"; }}
               />
             </div>
 
-            <button
+            <motion.button
               type="submit"
               disabled={loading}
               className="btn-primary w-full justify-center py-3.5 text-sm rounded-xl disabled:opacity-60 mt-2"
+              whileHover={!loading ? { scale: 1.02, boxShadow: "0 12px 28px rgba(232,0,61,0.45)" } : {}}
+              whileTap={!loading ? { scale: 0.97 } : {}}
+              transition={{ duration: 0.15 }}
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Spinner /> Signing in…
-                </span>
-              ) : "Sign In"}
-            </button>
+              <AnimatePresence mode="wait" initial={false}>
+                {loading ? (
+                  <motion.span
+                    key="loading"
+                    className="flex items-center justify-center gap-2"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  >
+                    <Spinner /> Signing in…
+                  </motion.span>
+                ) : (
+                  <motion.span key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    Sign In
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </form>
 
           <p

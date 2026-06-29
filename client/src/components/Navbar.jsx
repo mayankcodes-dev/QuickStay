@@ -17,29 +17,52 @@ const AvatarMenu = ({ user, logout, navigate, isOwner, setShowHotelReg }) => {
 
   const initial = user?.username?.[0]?.toUpperCase() || "?";
 
+  const menuItems = [
+    {
+      label: "My Bookings",
+      onClick: () => { navigate("/my-bookings"); setOpen(false); },
+      icon: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 opacity-60">
+          <rect x="3" y="4" width="14" height="14" rx="2"/><path d="M7 2v4M13 2v4M3 10h14"/>
+        </svg>
+      ),
+    },
+    {
+      label: isOwner ? "Owner Dashboard" : "List My Property",
+      onClick: () => { setOpen(false); isOwner ? navigate("/owner") : setShowHotelReg(true); },
+      icon: (
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 opacity-60">
+          <path d="M10 2l8 7H2l8-7zM4 9v8h12V9"/><rect x="7" y="13" width="6" height="4"/>
+        </svg>
+      ),
+    },
+  ];
+
   return (
     <div className="relative" ref={ref}>
-      <button
+      <motion.button
         onClick={() => setOpen(o => !o)}
         aria-label="Open account menu"
         aria-expanded={open}
-        className="flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs text-white transition-all hover:scale-105 overflow-hidden ring-2 ring-transparent hover:ring-white/20"
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.94 }}
+        className="flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs text-white overflow-hidden ring-2 ring-transparent hover:ring-white/20 transition-all"
         style={{ background: "linear-gradient(135deg,#E8003D,#9B001F)" }}
       >
         {user.image
           ? <img src={user.image} alt={user.username} className="w-8 h-8 rounded-full object-cover" />
           : initial}
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {open && (
           <motion.div
             role="menu"
             aria-label="Account menu"
-            initial={{ opacity: 0, y: -8, scale: 0.94 }}
+            initial={{ opacity: 0, y: -10, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.94 }}
-            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, y: -10, scale: 0.92 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
             className="absolute right-0 top-11 w-56 rounded-2xl overflow-hidden shadow-2xl z-50"
             style={{
               background: "rgba(12,12,20,0.98)",
@@ -65,29 +88,42 @@ const AvatarMenu = ({ user, logout, navigate, isOwner, setShowHotelReg }) => {
               </div>
             </div>
 
+            {/* Menu items with stagger */}
             <div className="py-2">
-              <MenuItem onClick={() => { navigate("/my-bookings"); setOpen(false); }}>
-                <span className="flex items-center gap-2.5">
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 opacity-60"><rect x="3" y="4" width="14" height="14" rx="2"/><path d="M7 2v4M13 2v4M3 10h14"/></svg>
-                  My Bookings
-                </span>
-              </MenuItem>
-              <MenuItem onClick={() => {
-                setOpen(false);
-                isOwner ? navigate("/owner") : setShowHotelReg(true);
-              }}>
-                <span className="flex items-center gap-2.5">
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 opacity-60"><path d="M10 2l8 7H2l8-7zM4 9v8h12V9"/><rect x="7" y="13" width="6" height="4"/></svg>
-                  {isOwner ? "Owner Dashboard" : "List My Property"}
-                </span>
-              </MenuItem>
+              {menuItems.map((item, i) => (
+                <motion.button
+                  key={item.label}
+                  role="menuitem"
+                  onClick={item.onClick}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 + 0.08, duration: 0.18 }}
+                  whileHover={{ x: 4, backgroundColor: "rgba(255,255,255,0.06)" }}
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium flex items-center gap-2.5"
+                  style={{ color: "rgba(255,255,255,0.72)" }}
+                >
+                  {item.icon}
+                  {item.label}
+                </motion.button>
+              ))}
+
               <div className="mx-3 my-1.5 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }} />
-              <MenuItem onClick={() => { logout(); setOpen(false); }} danger>
-                <span className="flex items-center gap-2.5">
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 opacity-70"><path d="M13 3h4v14h-4M8 14l-4-4 4-4M4 10h9"/></svg>
-                  Sign Out
-                </span>
-              </MenuItem>
+
+              <motion.button
+                role="menuitem"
+                onClick={() => { logout(); setOpen(false); }}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.18, duration: 0.18 }}
+                whileHover={{ x: 4, backgroundColor: "rgba(248,113,113,0.08)" }}
+                className="w-full text-left px-4 py-2.5 text-sm font-medium flex items-center gap-2.5"
+                style={{ color: "#F87171" }}
+              >
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 opacity-70">
+                  <path d="M13 3h4v14h-4M8 14l-4-4 4-4M4 10h9"/>
+                </svg>
+                Sign Out
+              </motion.button>
             </div>
           </motion.div>
         )}
@@ -96,22 +132,12 @@ const AvatarMenu = ({ user, logout, navigate, isOwner, setShowHotelReg }) => {
   );
 };
 
-const MenuItem = ({ onClick, children, danger }) => (
-  <button
-    onClick={onClick}
-    className="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors hover:bg-white/5 flex items-center"
-    style={{ color: danger ? "#F87171" : "rgba(255,255,255,0.72)" }}
-  >
-    {children}
-  </button>
-);
-
 // ─── Nav link ─────────────────────────────────────────────────
 const NavLink = ({ to, children, active }) => (
   <Link
     to={to}
     aria-current={active ? "page" : undefined}
-    className="relative px-3.5 py-1.5 text-sm font-semibold rounded-full transition-all duration-200"
+    className="relative px-3.5 py-1.5 text-sm font-semibold rounded-full transition-colors duration-200"
     style={{ color: active ? "#ffffff" : "rgba(255,255,255,0.52)" }}
   >
     {active && (
@@ -119,7 +145,7 @@ const NavLink = ({ to, children, active }) => (
         layoutId="nav-active"
         className="absolute inset-0 rounded-full -z-10"
         style={{ background: "rgba(255,255,255,0.12)" }}
-        transition={{ type: "spring", stiffness: 500, damping: 35 }}
+        transition={{ type: "spring", stiffness: 500, damping: 38 }}
       />
     )}
     {children}
@@ -154,26 +180,47 @@ const mobileLinks = [
   },
 ];
 
-// ─── Dark/Light toggle ────────────────────────────────────────
+// ─── Dark/Light toggle with animated icon swap ─────────────────
 const DarkToggle = ({ darkMode, toggleDarkMode }) => (
-  <button
+  <motion.button
     onClick={toggleDarkMode}
     aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-    className="flex items-center justify-center w-8 h-8 rounded-full transition-all hover:bg-white/10"
-    style={{ color: darkMode ? "#FBBF24" : "rgba(255,255,255,0.55)" }}
+    whileHover={{ scale: 1.12, rotate: 15 }}
+    whileTap={{ scale: 0.88 }}
+    className="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
+    style={{
+      color: darkMode ? "#FBBF24" : "rgba(255,255,255,0.55)",
+      background: "rgba(255,255,255,0.06)",
+    }}
   >
-    {darkMode ? (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-        <circle cx="12" cy="12" r="5"/>
-        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none"/>
-      </svg>
-    ) : (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-      </svg>
-    )}
-  </button>
+    <AnimatePresence mode="wait" initial={false}>
+      {darkMode ? (
+        <motion.svg
+          key="sun"
+          width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
+          initial={{ opacity: 0, rotate: -90, scale: 0.6 }}
+          animate={{ opacity: 1, rotate: 0, scale: 1 }}
+          exit={{ opacity: 0, rotate: 90, scale: 0.6 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <circle cx="12" cy="12" r="5"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none"/>
+        </motion.svg>
+      ) : (
+        <motion.svg
+          key="moon"
+          width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
+          initial={{ opacity: 0, rotate: 90, scale: 0.6 }}
+          animate={{ opacity: 1, rotate: 0, scale: 1 }}
+          exit={{ opacity: 0, rotate: -90, scale: 0.6 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </motion.svg>
+      )}
+    </AnimatePresence>
+  </motion.button>
 );
 
 // ─── MAIN NAVBAR ──────────────────────────────────────────────
@@ -204,9 +251,9 @@ const Navbar = () => {
       >
         <motion.nav
           aria-label="Main navigation"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, y: -28, scaleX: 0.85 }}
+          animate={{ opacity: 1, y: 0, scaleX: 1 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="flex items-center gap-1 px-3"
           style={{
             height: "52px",
@@ -214,15 +261,15 @@ const Navbar = () => {
             maxWidth: "820px",
             width: "calc(100% - 40px)",
             background: scrolled
-              ? "rgba(10, 10, 18, 0.92)"
-              : "rgba(10, 10, 18, 0.70)",
-            backdropFilter: "blur(24px) saturate(180%)",
-            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+              ? "rgba(10, 10, 18, 0.95)"
+              : "rgba(10, 10, 18, 0.72)",
+            backdropFilter: "blur(28px) saturate(180%)",
+            WebkitBackdropFilter: "blur(28px) saturate(180%)",
             border: "1px solid rgba(255,255,255,0.10)",
             boxShadow: scrolled
-              ? "0 12px 40px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.05) inset"
+              ? "0 16px 48px rgba(0,0,0,0.60), 0 0 0 0.5px rgba(255,255,255,0.05) inset, 0 1px 0 rgba(255,255,255,0.06) inset"
               : "0 4px 24px rgba(0,0,0,0.30)",
-            transition: "background 0.3s, box-shadow 0.3s",
+            transition: "background 0.35s, box-shadow 0.35s",
           }}
         >
           {/* Logo */}
@@ -258,20 +305,22 @@ const Navbar = () => {
                 setShowHotelReg={setShowHotelReg}
               />
             ) : (
-              <Link
-                to="/login"
-                className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold text-white transition-all hover:brightness-110 hover:scale-105"
-                style={{
-                  background: "linear-gradient(135deg,#E8003D 0%,#B5002E 100%)",
-                  boxShadow: "0 4px 16px rgba(232,0,61,0.40)",
-                  letterSpacing: "0.01em",
-                }}
-              >
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                  <path d="M10 10a4 4 0 100-8 4 4 0 000 8zM2 18c0-4 3.6-7 8-7s8 3 8 7"/>
-                </svg>
-                Sign In
-              </Link>
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+                <Link
+                  to="/login"
+                  className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold text-white"
+                  style={{
+                    background: "linear-gradient(135deg,#E8003D 0%,#B5002E 100%)",
+                    boxShadow: "0 4px 16px rgba(232,0,61,0.40)",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                    <path d="M10 10a4 4 0 100-8 4 4 0 000 8zM2 18c0-4 3.6-7 8-7s8 3 8 7"/>
+                  </svg>
+                  Sign In
+                </Link>
+              </motion.div>
             )}
           </div>
         </motion.nav>
@@ -282,11 +331,14 @@ const Navbar = () => {
         aria-label="Mobile navigation"
         className="sm:hidden fixed bottom-4 left-4 right-4 z-50"
       >
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="flex items-center justify-around py-3 px-6 rounded-2xl"
           style={{
-            background: "rgba(10,10,18,0.94)",
-            backdropFilter: "blur(24px)",
+            background: "rgba(10,10,18,0.96)",
+            backdropFilter: "blur(28px)",
             border: "1px solid rgba(255,255,255,0.09)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.50)",
           }}
@@ -299,15 +351,35 @@ const Navbar = () => {
                 to={l.path}
                 aria-current={active ? "page" : undefined}
                 aria-label={l.name}
-                className="flex flex-col items-center gap-1 transition-all min-w-[44px]"
+                className="flex flex-col items-center gap-1 min-w-[44px]"
                 style={{ color: active ? "#E8003D" : "rgba(255,255,255,0.45)" }}
               >
-                {l.icon}
-                <span className="text-[10px] font-semibold">{l.name}</span>
+                <motion.span
+                  whileTap={{ scale: 0.80 }}
+                  animate={active ? { scale: [1, 1.22, 1] } : {}}
+                  transition={{ duration: 0.3 }}
+                  className="block"
+                >
+                  {l.icon}
+                </motion.span>
+                <motion.span
+                  className="text-[10px] font-semibold"
+                  animate={active ? { scale: 1 } : { scale: 1 }}
+                >
+                  {l.name}
+                </motion.span>
+                {active && (
+                  <motion.div
+                    layoutId="mobile-active-dot"
+                    className="w-1 h-1 rounded-full"
+                    style={{ background: "#E8003D" }}
+                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                  />
+                )}
               </Link>
             );
           })}
-        </div>
+        </motion.div>
       </nav>
     </>
   );

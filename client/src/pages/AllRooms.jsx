@@ -23,26 +23,38 @@ const STAR_FILTERS = [5, 4, 3];
 
 // ── Checkbox ─────────────────────────────────────────────
 const CheckBox = ({ label, selected, onChange }) => (
-  <label className="flex items-center gap-2.5 cursor-pointer mt-1.5 text-sm">
-    <span className="w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors"
-      style={{ background: selected ? "var(--color-primary)" : "transparent", borderColor: selected ? "var(--color-primary)" : "var(--color-border-strong)" }}>
+  <motion.label
+    className="flex items-center gap-2.5 cursor-pointer mt-1.5 text-sm"
+    whileHover={{ x: 3 }}
+    transition={{ duration: 0.15 }}
+  >
+    <motion.span
+      className="w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors"
+      style={{ background: selected ? "var(--color-primary)" : "transparent", borderColor: selected ? "var(--color-primary)" : "var(--color-border-strong)" }}
+      animate={selected ? { scale: [1, 1.2, 1] } : { scale: 1 }}
+      transition={{ duration: 0.25 }}
+    >
       {selected && <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>}
-    </span>
+    </motion.span>
     <input type="checkbox" className="sr-only" checked={selected} onChange={e => onChange(e.target.checked, label)} />
     <span style={{ color: "var(--color-text-secondary)" }}>{label}</span>
-  </label>
+  </motion.label>
 );
 
 // ── Radio ─────────────────────────────────────────────────
 const RadioButton = ({ label, selected, onChange }) => (
-  <label className="flex items-center gap-2.5 cursor-pointer mt-1.5 text-sm">
+  <motion.label
+    className="flex items-center gap-2.5 cursor-pointer mt-1.5 text-sm"
+    whileHover={{ x: 3 }}
+    transition={{ duration: 0.15 }}
+  >
     <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors"
       style={{ borderColor: selected ? "var(--color-primary)" : "var(--color-border-strong)" }}>
       {selected && <span className="w-2 h-2 rounded-full" style={{ background: "var(--color-primary)" }} />}
     </span>
     <input type="radio" className="sr-only" checked={selected} onChange={() => onChange(label)} />
     <span style={{ color: "var(--color-text-secondary)" }}>{label}</span>
-  </label>
+  </motion.label>
 );
 
 // ── Filter Panel ─────────────────────────────────────────
@@ -51,10 +63,22 @@ const FilterPanel = ({ filters, setFilters, selectedSort, setSelectedSort, onCle
     setFilters(p => ({ ...p, [key]: checked ? [...p[key], value] : p[key].filter(v => v !== value) }));
 
   return (
-    <div className="rounded-2xl p-8 w-full lg:w-72 shrink-0" style={{ background: "var(--color-surface-2)", boxShadow: "var(--shadow-md)" }}>
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="rounded-2xl p-8 w-full lg:w-72 shrink-0"
+      style={{ background: "var(--color-surface-2)", boxShadow: "var(--shadow-md)" }}
+    >
       <div className="flex items-center justify-between mb-5">
         <h2 className="font-bold text-base" style={{ color: "var(--color-text-primary)" }}>Filters</h2>
-        <button onClick={onClear} className="text-xs font-semibold" style={{ color: "var(--color-primary)" }}>Clear all</button>
+        <motion.button
+          onClick={onClear}
+          className="text-xs font-semibold"
+          style={{ color: "var(--color-primary)" }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
+        >Clear all</motion.button>
       </div>
 
       {/* Star rating */}
@@ -96,7 +120,7 @@ const FilterPanel = ({ filters, setFilters, selectedSort, setSelectedSort, onCle
           <RadioButton key={opt} label={opt} selected={selectedSort === opt} onChange={setSelectedSort} />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

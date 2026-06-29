@@ -449,3 +449,215 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* Card inner padding */
 .card-body { padding: 2rem 2.25rem; }
 @media (max-width: 640px) { .card-body { padding: 1.5rem 1.25rem; } }
+
+/* ============================================================
+   MICRO-INTERACTION ANIMATIONS
+   Premium motion library — spring-feel, personality-driven
+   ============================================================ */
+
+/* ── Keyframes ─────────────────────────────────────────────── */
+
+/* Float — subtle levitation for decorative elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-8px) rotate(1deg); }
+  66%       { transform: translateY(-4px) rotate(-0.5deg); }
+}
+
+/* Glow pulse — for badges, CTAs */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 45, 85, 0); }
+  50%       { box-shadow: 0 0 0 8px rgba(255, 45, 85, 0.15); }
+}
+
+/* Shimmer slide — for decorative bars */
+@keyframes shimmer-slide {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Fade up — entrance for elements */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Slide in from left */
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Slide in from right */
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Digit flip (countdown) */
+@keyframes flip-up {
+  0%   { transform: rotateX(90deg); opacity: 0; }
+  100% { transform: rotateX(0deg);  opacity: 1; }
+}
+
+@keyframes flip-down {
+  0%   { transform: rotateX(0deg);   opacity: 1; }
+  100% { transform: rotateX(-90deg); opacity: 0; }
+}
+
+/* Count-up reveal */
+@keyframes count-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* Heartbeat — for favourite/wishlist */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  14%       { transform: scale(1.22); }
+  28%       { transform: scale(1); }
+  42%       { transform: scale(1.15); }
+  70%       { transform: scale(1); }
+}
+
+/* Wiggle — for icons */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20%       { transform: rotate(-10deg); }
+  40%       { transform: rotate(10deg); }
+  60%       { transform: rotate(-6deg); }
+  80%       { transform: rotate(6deg); }
+}
+
+/* Ripple — for button press */
+@keyframes ripple {
+  to { transform: scale(4); opacity: 0; }
+}
+
+/* Breath — for background blobs */
+@keyframes breath {
+  0%, 100% { transform: scale(1)    rotate(0deg); }
+  33%       { transform: scale(1.18) rotate(8deg); }
+  66%       { transform: scale(0.92) rotate(-4deg); }
+}
+
+/* Gradient shimmer for decorative bars */
+@keyframes gradient-shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Bounce in — for modals/drawers */
+@keyframes bounce-in {
+  0%   { transform: scale(0.85); opacity: 0; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* ── Utility classes ────────────────────────────────────────── */
+
+.animate-float       { animation: float 5s ease-in-out infinite; }
+.animate-pulse-glow  { animation: pulse-glow 2.5s ease-in-out infinite; }
+.animate-fade-up     { animation: fade-up 0.55s var(--ease-out) both; }
+.animate-slide-left  { animation: slide-in-left 0.45s var(--ease-out) both; }
+.animate-slide-right { animation: slide-in-right 0.45s var(--ease-out) both; }
+.animate-heartbeat   { animation: heartbeat 0.7s ease both; }
+.animate-wiggle      { animation: wiggle 0.5s ease both; }
+.animate-bounce-in   { animation: bounce-in 0.45s var(--ease-spring) both; }
+.animate-count-in    { animation: count-in 0.5s var(--ease-out) both; }
+.animate-breath      { animation: breath 6s ease-in-out infinite; }
+
+/* Stagger helpers (set via inline style delay) */
+.stagger-1  { animation-delay: 0.05s; }
+.stagger-2  { animation-delay: 0.10s; }
+.stagger-3  { animation-delay: 0.15s; }
+.stagger-4  { animation-delay: 0.20s; }
+.stagger-5  { animation-delay: 0.25s; }
+.stagger-6  { animation-delay: 0.30s; }
+
+/* Shimmer decorative bar */
+.shimmer-bar {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-primary) 30%,
+    var(--color-accent) 60%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-slide 3s linear infinite;
+}
+
+/* ── Hover / Tap feedback utilities ─────────────────────────── */
+
+.hover-lift {
+  transition: transform var(--duration-base) var(--ease-spring),
+              box-shadow var(--duration-base) var(--ease-out);
+}
+.hover-lift:hover { transform: translateY(-4px); }
+
+.hover-scale {
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+.hover-scale:hover { transform: scale(1.04); }
+
+/* Button active press-down */
+.btn-primary:active,
+.btn-outline:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* ── Input focus ring — animated expand ─────────────────────── */
+
+.input-field {
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow   var(--duration-fast) var(--ease-out),
+    background   var(--duration-fast);
+}
+
+.input-field:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(255, 45, 85, 0.14), 0 1px 4px rgba(0,0,0,0.08);
+  outline: none;
+}
+
+/* ── Flip countdown digit ────────────────────────────────────── */
+
+.digit-flip-enter  { animation: flip-up   0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.digit-flip-exit   { animation: flip-down 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ── Gradient animated text ─────────────────────────────────── */
+
+.text-gradient-animated {
+  background: linear-gradient(135deg, #FF2D55 0%, #FF6B8A 40%, #FF9F0A 80%, #FF2D55 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shimmer 4s ease infinite;
+}
+
+/* ── Performance hints ──────────────────────────────────────── */
+
+.will-change-transform { will-change: transform; }
+.will-change-opacity   { will-change: opacity; }
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-pulse-glow,
+  .animate-fade-up,
+  .animate-slide-left,
+  .animate-slide-right,
+  .animate-heartbeat,
+  .animate-wiggle,
+  .animate-bounce-in,
+  .animate-count-in,
+  .animate-breath,
+  .shimmer-bar {
+    animation: none !important;
+    transition: none !important;
+  }
+}

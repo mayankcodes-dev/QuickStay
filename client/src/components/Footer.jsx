@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import Logo from "./Logo";
-
 
 const columns = [
   {
@@ -33,9 +33,9 @@ const columns = [
   {
     heading: "Legal",
     items: [
-      { label: "Privacy Policy",  href: "/" },
+      { label: "Privacy Policy",   href: "/" },
       { label: "Terms of Service", href: "/" },
-      { label: "Cookie Policy",   href: "/" },
+      { label: "Cookie Policy",    href: "/" },
     ],
   },
 ];
@@ -79,27 +79,46 @@ const socials = [
   },
 ];
 
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
+};
+
+const itemVariants = {
+  hidden:  { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+};
+
 const Footer = () => {
   const year = new Date().getFullYear();
 
   return (
-    <footer
+    <motion.footer
       className="mt-auto"
       style={{ background: "#040408", color: "#9898B8" }}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
     >
-      {/* ── Top decorative bar ──────────────────────── */}
+      {/* ── Top animated shimmer bar ──────────────────── */}
       <div
-        className="h-0.5 w-full"
-        style={{ background: "linear-gradient(90deg, transparent, #E8003D 30%, #F5A623 70%, transparent)" }}
+        className="h-0.5 w-full shimmer-bar"
       />
 
       <div className="px-4 md:px-16 lg:px-24 xl:px-32 pt-14 pb-8">
 
         {/* ── Main grid ──────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 mb-12">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 mb-12"
+        >
 
           {/* Brand column */}
-          <div className="lg:col-span-2">
+          <motion.div variants={itemVariants} className="lg:col-span-2">
             <Logo size="lg" />
 
             <p className="text-sm text-white/50 leading-relaxed max-w-xs mt-5 mb-6">
@@ -110,28 +129,37 @@ const Footer = () => {
             {/* Social icons */}
             <div className="flex gap-2.5">
               {socials.map((s) => (
-                <a
+                <motion.a
                   key={s.label}
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.label}
-                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-red-600"
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
                   style={{
                     background: "rgba(255,255,255,0.08)",
                     color: "rgba(255,255,255,0.65)",
                     border: "1px solid rgba(255,255,255,0.08)",
                   }}
+                  whileHover={{
+                    y: -5,
+                    scale: 1.15,
+                    backgroundColor: "rgba(232,0,61,0.85)",
+                    color: "#ffffff",
+                    boxShadow: "0 8px 20px rgba(232,0,61,0.35)",
+                  }}
+                  whileTap={{ scale: 0.90 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {s.icon}
-                </a>
+                </motion.a>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Nav link columns */}
           {columns.map((col) => (
-            <div key={col.heading}>
+            <motion.div key={col.heading} variants={itemVariants}>
               <h4
                 className="font-bold text-sm mb-4 tracking-wide"
                 style={{ color: "#FFFFFF" }}
@@ -141,19 +169,21 @@ const Footer = () => {
               <ul className="space-y-2.5">
                 {col.items.map((item) => (
                   <li key={item.label}>
-                    <Link
-                      to={item.href}
-                      className="text-sm transition-colors duration-200 hover:text-white"
-                      style={{ color: "rgba(255,255,255,0.45)" }}
-                    >
-                      {item.label}
-                    </Link>
+                    <motion.div whileHover={{ x: 4 }} transition={{ duration: 0.15 }}>
+                      <Link
+                        to={item.href}
+                        className="text-sm transition-colors duration-200 hover:text-white"
+                        style={{ color: "rgba(255,255,255,0.45)" }}
+                      >
+                        {item.label}
+                      </Link>
+                    </motion.div>
                   </li>
                 ))}
               </ul>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {/* ── Divider ────────────────────────────────── */}
         <div
@@ -167,18 +197,19 @@ const Footer = () => {
             © {year} YoYo Technologies Pvt. Ltd. All rights reserved.
           </p>
 
-          {/* ── Made with love in India by Mayank ────── */}
+          {/* Made with love by Mayank */}
           <div className="flex items-center gap-1.5 text-xs" style={{ color: "rgba(255,255,255,0.40)" }}>
             <span>Made with</span>
-            {/* ❤️ animated heart */}
-            <svg
+            <motion.svg
               viewBox="0 0 24 24"
               fill="#E8003D"
               className="w-3.5 h-3.5"
               style={{ filter: "drop-shadow(0 0 4px rgba(232,0,61,0.6))" }}
+              animate={{ scale: [1, 1.25, 1] }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
             >
               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
+            </motion.svg>
             <span>in India by</span>
             <a
               href="https://codermayank69.vercel.app"
@@ -196,7 +227,7 @@ const Footer = () => {
           </div>
         </div>
       </div>
-    </footer>
+    </motion.footer>
   );
 };
 
