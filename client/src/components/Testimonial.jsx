@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { testimonials } from "../assets/assets";
 import StarRating from "./StarRating";
-
 
 const TOTAL = testimonials.length;
 
@@ -38,37 +37,22 @@ const CardContent = ({ t }) => (
   </motion.div>
 );
 
-
 const Testimonial = () => {
   const [startIdx,  setStartIdx]  = useState(0);
   const [direction, setDirection] = useState(1);
-  const [animKey,   setAnimKey]   = useState(0);
-  const [animCol,   setAnimCol]   = useState(null);
   const timerRef    = useRef(null);
   const sectionRef  = useRef(null);
-  const hasRevealed = useRef(false);
 
-  // useInView: fires once when the grid enters the viewport
   const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
-
-  // After first reveal, mark it done so carousel advances don't re-trigger it
-  useEffect(() => { if (isInView) hasRevealed.current = true; }, [isInView]);
-
-  // Build 3 visible cards from the window
-  const visible = [0, 1, 2].map(i => testimonials[(startIdx + i) % TOTAL]);
 
   const resetTimer = () => {
     clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => advance(1), 35000); // 35 s
+    timerRef.current = setInterval(() => advance(1), 35000);
   };
 
   const advance = (dir) => {
     setDirection(dir);
     setStartIdx(prev => (prev + dir + TOTAL) % TOTAL);
-    // going next → rightmost column (2) is the newly entered card
-    // going prev → leftmost column (0) is the newly entered card
-    setAnimCol(dir > 0 ? 2 : 0);
-    setAnimKey(k => k + 1);
   };
 
   const next = () => { advance(1);  resetTimer(); };
@@ -76,12 +60,15 @@ const Testimonial = () => {
 
   useEffect(() => { resetTimer(); return () => clearInterval(timerRef.current); }, []);
 
+  // Build 3 visible cards from the window
+  const visible = [0, 1, 2].map(i => testimonials[(startIdx + i) % TOTAL]);
+
   return (
-    <section className="py-16 px-4 md:px-16 lg:px-24 xl:px-32">
+    <section className="py-16 px-4 md:px-16 lg:px-24 xl:px-32 overflow-hidden">
       {/* Heading */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }} transition={{ duration: 0.5 }}
+        initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+        transition={{ duration: 0.5 }}
         className="text-center mb-10"
       >
         <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--color-primary)" }}>
@@ -94,45 +81,24 @@ const Testimonial = () => {
 
       <div ref={sectionRef} className="relative max-w-6xl mx-auto">
 
-        {/* 3-column grid — scroll-reveal on entry, then only ONE column re-animates per advance */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {visible.map((t, colIdx) => {
-            const isNew = colIdx === animCol;
-
-            // On first scroll-into-view: staggered fade-up for all 3 cards
-            if (!hasRevealed.current) {
-              return (
-                <motion.div
-                  key={`reveal-${colIdx}`}
-                  initial={{ opacity: 0, y: 36 }}
-                  animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 36 }}
-                  transition={{ duration: 0.52, delay: colIdx * 0.12, ease: [0.22, 1, 0.36, 1] }}
-                  className="min-h-[220px]"
-                >
-                  <CardContent t={t} />
-                </motion.div>
-              );
-            }
-
-            // After reveal: normal carousel single-card fade
-            return (
-              <div key={colIdx} className="min-h-[220px]">
-                {isNew ? (
-                  <motion.div
-                    key={animKey}
-                    initial={{ opacity: 0, x: direction > 0 ? 70 : -70 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-                    className="h-full"
-                  >
-                    <CardContent t={t} />
-                  </motion.div>
-                ) : (
-                  <CardContent t={t} />
-                )}
-              </div>
-            );
-          })}
+        {/* 3-column flex layout — AnimatePresence popLayout gives us the slide shift effect */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <AnimatePresence mode="popLayout" initial={false}>
+            {visible.map((t) => (
+              <motion.div
+                layout
+                key={t.id}
+                custom={direction}
+                initial={{ opacity: 0, x: direction > 0 ? 80 : -80, filter: "blur(4px)" }}
+                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, x: direction > 0 ? -80 : 80, filter: "blur(4px)" }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full md:w-[calc(33.333%-0.67rem)] flex-shrink-0 min-h-[220px]"
+              >
+                <CardContent t={t} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
 
         {/* Arrows */}
@@ -160,7 +126,6 @@ const Testimonial = () => {
               onClick={() => {
                 const dir = i > startIdx ? 1 : -1;
                 setDirection(dir); setStartIdx(i);
-                setAnimCol(dir > 0 ? 2 : 0); setAnimKey(k => k + 1);
                 resetTimer();
               }}
               className="rounded-full transition-all duration-300"
