@@ -6,7 +6,7 @@ import { useAppContext } from "../context/AppContext";
 const CLOUD = "dgqgzmzed";
 
 // ── Video sources
-const HERO_VIDEO     = "https://res.cloudinary.com/dgqgzmzed/video/upload/v1782646940/hero_video_ilofmd.mp4";
+const HERO_VIDEO     = "https://res.cloudinary.com/dgqgzmzed/video/upload/v1782728427/hero_video_main_teqgjw.mp4";
 const HERO_VIDEO_ALT = "https://res.cloudinary.com/dgqgzmzed/video/upload/v1782646953/hero_video_alt_bjksts.mp4";
 
 // ── Static fallback (shown on mobile + while video loads on desktop)
